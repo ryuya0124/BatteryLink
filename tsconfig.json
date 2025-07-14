@@ -2,6 +2,9 @@
     "compilerOptions": {
       "jsx": "react-jsx",
       "jsxImportSource": "react",
+      "moduleResolution": "bundler",
+      "esModuleInterop": true,
+      "allowSyntheticDefaultImports": true,
       "target": "ESNext",
       "module": "ESNext",
       "baseUrl": ".",
