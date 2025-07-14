@@ -3,7 +3,11 @@ main = "server/index.js"
 compatibility_date = "2025-07-12"
 account_id = "9df138cc6e3f2aee3531fd5aaa9e7b61"
 
+[build]
+command = "npm run build"  # ビルドコマンドを設定
+
 [assets]
+directory = "dist"
 not_found_handling = "single-page-application"
 
 [observability]
