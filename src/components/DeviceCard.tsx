@@ -29,10 +29,19 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     <CardHeader>
       <div className="flex items-center justify-between">
         <div>
-          <CardTitle className="text-lg font-semibold">{device.name}</CardTitle>
-          <CardDescription>
-            {device.brand} / {device.model} / {device.os_version} / {device.model_number}
-          </CardDescription>
+          <CardTitle className="text-lg font-semibold">
+            {device.name}
+          </CardTitle>
+          <div className="mt-1">
+            <div className="text-sm text-gray-500">
+              {device.brand} {device.model}
+            </div>
+            <div className="text-xs text-gray-400">
+              {device.os_version}
+              {device.os_version && device.model_number ? " • " : ""}
+              {device.model_number}
+            </div>
+          </div>
         </div>
         <div className="flex gap-2">
           {device.is_charging && (
