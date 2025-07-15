@@ -12,3 +12,33 @@ not_found_handling = "single-page-application"
 
 [observability]
 enabled = true
+
+[vars]
+JWT_PRIVATE_KEY = """-----BEGIN RSA PRIVATE KEY-----
+MIICWwIBAAKBgF6hOM+YbIPhZdo3hZC6iorEZP6R3JdqIGd/pXa/awZPzu19ez+7
+xb82/z6g5sEwa6iJJZpELojuNpeBSPR3UxKbvV42ozJXB7oeAUj8Sazx/Bd5AqgO
++FfMBJww/oE5V1+eUvni1InRZRlC9FKV2w9WpbEg1/jkSQVTAu5VSbM3AgMBAAEC
+gYAZIODQJ56xSppcXyAFtbNydAKJozwbrR/bvAa5SM1nyKufXxHqc7doNneDLwD3
+zh7Yi0rD81UUIYW3p6oy2LjjRjR5nTo7KeX3m15ZY581I0xAtzB7/qToJV/CCu6z
+8bLoWQyFfw4yoykbBYBvtDFNs54NBdpAxKfW6MCyVUB1QQJBAKg494rT5Xy9aagd
+zmPoCAZhnZevDlxiIF7UDLbY9l/4WhQ7mIUYjivO6thvn/My0SJzf1TsbY8hBfag
+yh+bJdcCQQCQAcrsxZm5zvZuAS6h9rDIsMqHeWrYEdBdBlJU7w7WRP+veL0PeyU2
+WkOtj27i1liUjQjjoPRz0WBG7VeItXGhAkAZnKLDtkNIXKZLfE5CE7+1CQOvZm2v
+TxlSlsJgzGOmdO9yCSjNitGKhfRng4c8xc3liuQmD+EWW5bG1/AuI7b9AkBpgwa9
+qKJTw9JHE1KplOg+g1pBHLMuEQ9LuWAFnwqN8Awu8xYDC8VeJ5DCz/788PQCE7vZ
+nIq/eT9DeI7UOa1BAkEAo6Lk2/XhO4ardqy4aI7gx9ys5xcqK7cfGhzpdOcjdEaE
+b7Cs0h2xl6YyZYShh3iqZx/gyewv+oOzmJ9qRAzLnA==
+-----END RSA PRIVATE KEY-----"""
+
+[[r2_buckets]]
+binding = "R2"         # JavaScript側で使うバインディング名
+bucket_name = "batterylink" # R2バケット名
+
+[[kv_namespaces]]
+binding = "KV"
+id = "469ca4549fcf44278f27283adc385b1a"
+
+[[d1_databases]]
+binding = "DB"  # JavaScript側でこの名前でデータベースにアクセスします
+database_name = "batterylink"  # 作成したデータベース名
+database_id = "7a7d34b9-a191-4aca-804c-c6347a44d9b1"  # 作成されたデータベースのID
