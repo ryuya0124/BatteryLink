@@ -26,48 +26,8 @@ const mockUser = { id: "demo-user", email: "demo@example.com" }
 const createClient = () => ({
   auth: {
     getSession: () => Promise.resolve({ data: { session: { user: mockUser } } }),
-    signInWithPassword: ({ email, password }: any) => Promise.resolve({ data: { user: mockUser }, error: null }),
-    signUp: ({ email, password }: any) => Promise.resolve({ data: { user: mockUser }, error: null }),
     signOut: () => Promise.resolve({ error: null }),
   },
-  from: (table: string) => ({
-    select: (columns: string) => ({
-      eq: (column: string, value: any) => ({
-        order: (column: string, options: any) =>
-          Promise.resolve({
-            data: JSON.parse(localStorage.getItem(`${table}_${value}`) || "[]"),
-            error: null,
-          }),
-      }),
-    }),
-    insert: (data: any[]) => ({
-      select: () => {
-        const newItem = { ...data[0], id: Date.now().toString() }
-        const existing = JSON.parse(localStorage.getItem(`${table}_${data[0].user_id}`) || "[]")
-        const updated = [...existing, newItem]
-        localStorage.setItem(`${table}_${data[0].user_id}`, JSON.stringify(updated))
-        return Promise.resolve({ data: [newItem], error: null })
-      },
-    }),
-    update: (updateData: any) => ({
-      eq: (column: string, value: any) => ({
-        select: () => {
-          const existing = JSON.parse(localStorage.getItem(`${table}_demo-user`) || "[]")
-          const updated = existing.map((item: any) => (item.id === value ? { ...item, ...updateData } : item))
-          localStorage.setItem(`${table}_demo-user`, JSON.stringify(updated))
-          return Promise.resolve({ data: updated.filter((item: any) => item.id === value), error: null })
-        },
-      }),
-    }),
-    delete: () => ({
-      eq: (column: string, value: any) => {
-        const existing = JSON.parse(localStorage.getItem(`${table}_demo-user`) || "[]")
-        const updated = existing.filter((item: any) => item.id !== value)
-        localStorage.setItem(`${table}_demo-user`, JSON.stringify(updated))
-        return Promise.resolve({ error: null })
-      },
-    }),
-  }),
 })
 
 const supabase = createClient()
@@ -93,9 +53,6 @@ export default function BatteryTracker() {
   // 1. user, setUserのuseStateを関数の先頭で定義
   const [user, setUser] = useState<AppUser | null>(null)
   const [showAddDevice, setShowAddDevice] = useState(false)
-  const [isLogin, setIsLogin] = useState(true)
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true)
 
   // 2. useDevicesで取得したstateを定義
@@ -268,28 +225,6 @@ export default function BatteryTracker() {
     await Promise.all(updatePromises)
   }, [devices, updateDeviceBattery])
 
-  const handleAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-
-    if (isLogin) {
-      const { data, error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-      if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || "" })
-      }
-    } else {
-      const { data, error } = await supabase.auth.signUp({
-        email,
-        password,
-      })
-      if (data.user) {
-        setUser({ id: data.user.id, email: data.user.email || "" })
-      }
-    }
-  }
-
   const handleLogout = async () => {
     await supabase.auth.signOut()
     setUser(null)
@@ -326,7 +261,7 @@ export default function BatteryTracker() {
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
             <Battery className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">バッテリートラッカー</h1>
+            <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
           </div>
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -365,25 +300,27 @@ export default function BatteryTracker() {
         />
 
         {/* Add Device Button */}
-        <AddDeviceDialog
-          open={showAddDevice}
-          onOpenChange={setShowAddDevice}
-          deviceName={deviceName}
-          setDeviceName={setDeviceName}
-          deviceBrand={deviceBrand}
-          setDeviceBrand={setDeviceBrand}
-          deviceModel={deviceModel}
-          setDeviceModel={setDeviceModel}
-          deviceOsVersion={deviceOsVersion}
-          setDeviceOsVersion={setDeviceOsVersion}
-          deviceModelNumber={deviceModelNumber}
-          setDeviceModelNumber={setDeviceModelNumber}
-          batteryLevel={batteryLevel}
-          setBatteryLevel={setBatteryLevel}
-          phoneModels={phoneModels}
-          selectedModelInfo={selectedModelInfo}
-          onSubmit={handleAddDevice}
-        />
+        <div className="mb-6">
+          <AddDeviceDialog
+            open={showAddDevice}
+            onOpenChange={setShowAddDevice}
+            deviceName={deviceName}
+            setDeviceName={setDeviceName}
+            deviceBrand={deviceBrand}
+            setDeviceBrand={setDeviceBrand}
+            deviceModel={deviceModel}
+            setDeviceModel={setDeviceModel}
+            deviceOsVersion={deviceOsVersion}
+            setDeviceOsVersion={setDeviceOsVersion}
+            deviceModelNumber={deviceModelNumber}
+            setDeviceModelNumber={setDeviceModelNumber}
+            batteryLevel={batteryLevel}
+            setBatteryLevel={setBatteryLevel}
+            phoneModels={phoneModels}
+            selectedModelInfo={selectedModelInfo}
+            onSubmit={handleAddDevice}
+          />
+        </div>
 
         {/* Devices Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
