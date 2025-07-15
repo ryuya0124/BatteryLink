@@ -15,6 +15,7 @@ import { DeviceStats } from "@/components/DeviceStats"
 import { DeviceFilterSort } from "@/components/DeviceFilterSort"
 import { useDevices } from "@/hooks/useDevices"
 import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneModels } from "@/lib/utils"
+import { AuthProvider, useAuthContext } from "./hooks/AuthContext"
 import { AuthForm } from "@/components/AuthForm"
 import { AutoUpdateControl } from "@/components/AutoUpdateControl"
 import { NoDevices } from "@/components/NoDevices"
@@ -49,9 +50,8 @@ interface BatteryApiResponse {
   error?: string
 }
 
-export default function BatteryTracker() {
-  // 1. user, setUserのuseStateを関数の先頭で定義
-  const [user, setUser] = useState<AppUser | null>(null)
+function BatteryTrackerInner() {
+  const { user, token, login, logout, authLoading } = useAuthContext()
   const [showAddDevice, setShowAddDevice] = useState(false)
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true)
 
@@ -99,7 +99,7 @@ export default function BatteryTracker() {
       data: { session },
     } = await supabase.auth.getSession()
     if (session?.user) {
-      setUser({ id: session.user.id, email: session.user.email || "" })
+      // setUser({ id: session.user.id, email: session.user.email || "" }) // 削除
     }
   }
 
@@ -226,9 +226,7 @@ export default function BatteryTracker() {
   }, [devices, updateDeviceBattery])
 
   const handleLogout = async () => {
-    await supabase.auth.signOut()
-    setUser(null)
-    // setDevices([]) // useDevicesで管理
+    await logout()
   }
 
   // deviceBrandが変更された時の処理を追加
@@ -242,16 +240,20 @@ export default function BatteryTracker() {
     }
   }, [deviceBrand, deviceModel])
 
+  if (authLoading) {
+    return <div className="min-h-screen flex items-center justify-center">Loading...</div>
+  }
+
+  if (!user || !token) {
+    return <AuthForm onAuthSuccess={async (user, password) => { await login(user.email, password); }} />
+  }
+
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
       </div>
     )
-  }
-
-  if (!user) {
-    return <AuthForm onAuthSuccess={setUser} />
   }
 
   return (
@@ -353,5 +355,13 @@ export default function BatteryTracker() {
         </footer>
       </div>
     </div>
+  )
+}
+
+export default function BatteryTracker() {
+  return (
+    <AuthProvider>
+      <BatteryTrackerInner />
+    </AuthProvider>
   )
 }

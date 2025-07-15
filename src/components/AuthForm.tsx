@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 interface AuthFormProps {
-  onAuthSuccess: (user: AppUser) => void
+  onAuthSuccess: (user: AppUser, password: string) => void
 }
 
 export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
@@ -42,7 +42,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
       const data = await res.json()
       // JWTからuser情報を抽出
       const payload = JSON.parse(atob(data.token.split(".")[1]))
-      onAuthSuccess({ id: payload.user_id, email })
+      onAuthSuccess({ id: payload.user_id, email }, password)
       setLoading(false)
     } catch (e: any) {
       setError("通信エラーが発生しました")
