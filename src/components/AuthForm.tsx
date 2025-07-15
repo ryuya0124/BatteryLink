@@ -7,18 +7,6 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
-// supabaseのmock
-const mockUser = { id: "demo-user", email: "demo@example.com" }
-const createClient = () => ({
-  auth: {
-    getSession: () => Promise.resolve({ data: { session: { user: mockUser } } }),
-    signInWithPassword: ({ email, password }: any) => Promise.resolve({ data: { user: mockUser }, error: null }),
-    signUp: ({ email, password }: any) => Promise.resolve({ data: { user: mockUser }, error: null }),
-    signOut: () => Promise.resolve({ error: null }),
-  },
-})
-const supabase = createClient()
-
 interface AuthFormProps {
   onAuthSuccess: (user: AppUser) => void
 }
@@ -27,19 +15,38 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (isLogin) {
-      const { data, error } = await supabase.auth.signInWithPassword({ email, password })
-      if (data.user) {
-        onAuthSuccess({ id: data.user.id, email: data.user.email || "" })
+    setError(null)
+    setLoading(true)
+    try {
+      let endpoint = isLogin ? "/api/auth/login" : "/api/auth/signup"
+      const res = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      })
+      if (!res.ok) {
+        let msg = isLogin ? "ログインに失敗しました" : "新規登録に失敗しました"
+        try {
+          const data = await res.json()
+          if (data.error) msg = data.error
+        } catch {}
+        setError(msg)
+        setLoading(false)
+        return
       }
-    } else {
-      const { data, error } = await supabase.auth.signUp({ email, password })
-      if (data.user) {
-        onAuthSuccess({ id: data.user.id, email: data.user.email || "" })
-      }
+      const data = await res.json()
+      // JWTからuser情報を抽出
+      const payload = JSON.parse(atob(data.token.split(".")[1]))
+      onAuthSuccess({ id: payload.user_id, email })
+      setLoading(false)
+    } catch (e: any) {
+      setError("通信エラーが発生しました")
+      setLoading(false)
     }
   }
 
@@ -75,7 +82,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
+                {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                <Button type="submit" className="w-full" disabled={loading}>
                   ログイン
                 </Button>
               </form>
@@ -96,7 +104,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
                     required
                   />
                 </div>
-                <Button type="submit" className="w-full">
+                {error && <div className="text-red-500 text-sm text-center">{error}</div>}
+                <Button type="submit" className="w-full" disabled={loading}>
                   新規登録
                 </Button>
               </form>

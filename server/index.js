@@ -1,13 +1,12 @@
+import route from "./api/route.js";
+
 export default {
-  fetch(request, env) {
+  async fetch(request, env, ctx) {
     const url = new URL(request.url);
-
     if (url.pathname.startsWith("/api/")) {
-      return Response.json({
-        name: "Cloudflare",
-      });
+      // route.jsのfetchに委譲
+      return route.fetch(request, env, ctx);
     }
-
-		return new Response(null, { status: 404 });
+    return new Response(null, { status: 404 });
   },
 }
