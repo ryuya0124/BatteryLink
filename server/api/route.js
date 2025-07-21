@@ -2,6 +2,7 @@ import { handleLogin, handleRefresh, handleLogout, handleSignup } from "./authHa
 import { verifyApiKeyAndUuid } from "./utils.js";
 import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice } from "./handlers/deviceHandlers.js";
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey } from "./handlers/apiKeyHandlers.js";
+import { handleMe } from "./handlers/meHandler.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -22,6 +23,9 @@ export default {
     }
     if (pathname === "/api/auth/signup" && request.method === "POST") {
       return handleSignup(request, env);
+    }
+    if (pathname === "/api/auth/me" && request.method === "GET") {
+      return handleMe(request, env);
     }
     // デバイスAPI
     if (pathname === "/api/devices" && request.method === "GET") {

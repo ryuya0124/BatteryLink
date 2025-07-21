@@ -27,30 +27,37 @@ export function useAuth(): AuthContextValue & { authLoading: boolean } {
 
   // ログイン
   const login = useCallback(async (email: string, password: string) => {
+    console.log("login called", email);
     const res = await fetch("/api/auth/login", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password }),
+      credentials: "include"
     })
     if (!res.ok) return false
-    const data = await res.json()
-    setToken(data.token)
-    const payload = JSON.parse(atob(data.token.split(".")[1]))
-    setUser({ id: payload.user_id, scope: payload.scope })
-    scheduleRefresh(data.token)
+    console.log("login success, calling refresh");
+    await refresh()
     return true
   }, [])
 
   // JWTリフレッシュ
   const refresh = useCallback(async () => {
-    const res = await fetch("/api/auth/refresh", { method: "POST" })
-    if (!res.ok) throw new Error("リフレッシュ失敗")
-    const data = await res.json()
-    setToken(data.token)
-    const payload = JSON.parse(atob(data.token.split(".")[1]))
-    setUser({ id: payload.user_id, scope: payload.scope })
-    scheduleRefresh(data.token)
-  }, [])
+    console.log("refresh called");
+    try {
+      const res = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+      if (!res.ok) throw new Error("リフレッシュ失敗");
+      console.log("fetching /api/auth/me");
+      const meRes = await fetch("/api/auth/me", { credentials: "include" });
+      if (!meRes.ok) throw new Error("ユーザー情報取得失敗");
+      const userData = await meRes.json();
+      console.log("me userData", userData);
+      setUser(userData);
+      setToken("dummy");
+      scheduleRefresh("dummy");
+    } catch (e) {
+      console.error("refresh error", e);
+    }
+  }, []);
 
   // ログアウト
   const logout = useCallback(async () => {

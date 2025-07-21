@@ -13,17 +13,11 @@ import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, token, login, logout, authLoading } = useAuthContext();
+  const { user, token, login, logout } = useAuthContext();
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
   const navigate = useNavigate();
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
-
-  useEffect(() => {
-    if (!user) {
-      navigate("/login");
-    }
-  }, [user, navigate]);
 
   const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(user);
 
@@ -157,19 +151,6 @@ export default function DashboardPage() {
     }
   }, [deviceBrand, deviceModel]);
 
-  if (authLoading) {
-    return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  }
-  if (!user || !token) {
-    return null;
-  }
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">

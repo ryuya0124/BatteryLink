@@ -46,12 +46,11 @@ export async function handleLogin(request, env) {
     console.log("after DB insert");
     const cookieRefresh = `refresh_token=${refresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
     const cookieToken = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900`;
-    return new Response(JSON.stringify({ success: true }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": cookieToken + ", " + cookieRefresh
-      }
-    });
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Set-Cookie", cookieToken);
+    headers.append("Set-Cookie", cookieRefresh);
+    return new Response(JSON.stringify({ success: true }), { headers });
   } catch (err) {
     let detail = "";
     try {
@@ -103,12 +102,11 @@ export async function handleRefresh(request, env) {
     ).run();
     const cookieRefresh = `refresh_token=${newRefresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
     const cookieToken = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900`;
-    return new Response(JSON.stringify({ success: true }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": cookieToken + ", " + cookieRefresh
-      }
-    });
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Set-Cookie", cookieToken);
+    headers.append("Set-Cookie", cookieRefresh);
+    return new Response(JSON.stringify({ success: true }), { headers });
   } catch (err) {
     console.log("REFRESH ERROR", err);
     return new Response(JSON.stringify({ error: "Internal Server Error", detail: err.message }), { status: 500, headers: { "Content-Type": "application/json" } });
@@ -176,13 +174,13 @@ export async function handleSignup(request, env) {
       request.headers.get("CF-Connecting-IP") || "",
       request.headers.get("User-Agent") || ""
     ).run();
-    const setCookie = `refresh_token=${refresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
-    return new Response(JSON.stringify({ token: jwt }), {
-      headers: {
-        "Content-Type": "application/json",
-        "Set-Cookie": setCookie
-      }
-    });
+    const cookieRefresh = `refresh_token=${refresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
+    const cookieToken = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900`;
+    const headers = new Headers();
+    headers.append("Content-Type", "application/json");
+    headers.append("Set-Cookie", cookieToken);
+    headers.append("Set-Cookie", cookieRefresh);
+    return new Response(JSON.stringify({ token: jwt }), { headers });
   } catch (err) {
     console.log("SIGNUP ERROR", err);
     return new Response(JSON.stringify({ error: "Internal Server Error", detail: err.message }), { status: 500, headers: { "Content-Type": "application/json" } });
