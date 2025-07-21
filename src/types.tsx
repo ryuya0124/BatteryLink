@@ -11,7 +11,6 @@ export interface Device {
   os_version?: string
   model_number: string
   battery_level: number
-  battery_capacity?: number
   last_updated: string
   user_id: string
   is_charging?: boolean

@@ -11,7 +11,7 @@ export function useDevices(user: AppUser | null) {
   const fetchDevices = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const res = await fetchWithAuth("/api/devices")
+    const res = await fetchWithAuth("/api/devices", { cache: "no-store" })
     if (res && res.ok) {
       const data = await res.json()
       setDevices(data)

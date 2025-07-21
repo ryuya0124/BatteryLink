@@ -10,18 +10,12 @@ export function randomOpaqueToken() {
   }
 
 // APIキー＋UUID認証ミドルウェア
-export async function verifyApiKeyAndUuid(request, env) {
+export async function verifyApiKeyAndUuid(request, env, uuid) {
   const apiKey = request.headers.get("x-api-key");
   if (!apiKey) {
     return { ok: false, status: 401, message: "APIキーが必要です" };
   }
-  let body;
-  try {
-    body = await request.clone().json();
-  } catch {
-    body = null;
-  }
-  const uuid = body?.uuid || new URL(request.url).searchParams.get("uuid");
+  console.log("uuid:", uuid);
   if (!uuid) {
     return { ok: false, status: 400, message: "UUIDが必要です" };
   }

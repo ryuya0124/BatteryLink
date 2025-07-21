@@ -85,13 +85,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             </>
           )}
         </div>
-        {typeof device.battery_capacity === "number" ? (
-          <div className={`text-xs font-medium px-2 py-1 rounded ${getBatteryCapacityBg(device.battery_capacity)} ${getBatteryCapacityColor(device.battery_capacity)}`}>
-            バッテリー容量: {device.battery_capacity}mAh
-          </div>
-        ) : (
-          <div className="text-xs text-gray-400">バッテリー容量: 未登録</div>
-        )}
         <div className="text-xs text-gray-500 mt-1">
           電圧: {device.voltage ? `${device.voltage}V` : <span className="text-gray-400">未登録</span>}
         </div>

@@ -39,6 +39,7 @@ export default {
     }
     if (pathname.startsWith("/api/devices/") && request.method === "PUT") {
       const uuid = decodeURIComponent(pathname.split("/api/devices/")[1]);
+      console.log("UUID:" + uuid)
       return handlePutDevice(request, env, uuid);
     }
     if (pathname.startsWith("/api/devices/") && request.method === "DELETE") {

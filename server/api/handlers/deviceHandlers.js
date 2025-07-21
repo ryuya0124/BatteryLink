@@ -12,9 +12,15 @@ export async function handleGetDevices(request, env) {
     const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
     // idを除外しuuidのみ返す
     const { results } = await env.DB.prepare(
-      "SELECT uuid, name, brand, model, os_version, model_number, battery_level, battery_capacity, last_updated, user_id, is_charging, temperature, voltage FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
+      "SELECT uuid, name, brand, model, os_version, model_number, battery_level, last_updated, user_id, is_charging, temperature, voltage FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
     ).bind(payload.user_id).all();
-    return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
+    return new Response(JSON.stringify(results), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
+      }
+    });
   } catch (e) {
     console.log("handleGetDevices error:", e);
     return new Response("認証エラー", { status: 401 });
@@ -33,8 +39,8 @@ export async function handlePostDevice(request, env) {
     const body = await request.json();
     const uuid = body.uuid || crypto.randomUUID();
     await env.DB.prepare(
-      `INSERT INTO devices (id, user_id, uuid, name, brand, model, os_version, model_number, battery_level, is_charging, battery_capacity, temperature, voltage, last_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      `INSERT INTO devices (id, user_id, uuid, name, brand, model, os_version, model_number, battery_level, is_charging, temperature, voltage, last_updated)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       crypto.randomUUID(),
       payload.user_id,
@@ -46,7 +52,6 @@ export async function handlePostDevice(request, env) {
       body.model_number !== undefined ? body.model_number : null,
       body.battery_level !== undefined ? body.battery_level : null,
       body.is_charging !== undefined ? body.is_charging : null,
-      body.battery_capacity !== undefined ? body.battery_capacity : null,
       body.temperature !== undefined ? body.temperature : null,
       body.voltage !== undefined ? body.voltage : null,
       new Date().toISOString()
@@ -59,17 +64,16 @@ export async function handlePostDevice(request, env) {
 }
 
 export async function handlePutDevice(request, env, uuid) {
-  const result = await verifyApiKeyAndUuid(request, env);
+  const result = await verifyApiKeyAndUuid(request, env, uuid);
   if (!result.ok) {
     return new Response(result.message, { status: result.status });
   }
   const body = await request.json();
   await env.DB.prepare(
-    `UPDATE devices SET battery_level=?, is_charging=?, battery_capacity=?, temperature=?, voltage=?, os_version=?, last_updated=? WHERE uuid=? AND user_id=?`
+    `UPDATE devices SET battery_level=?, is_charging=?, temperature=?, voltage=?, os_version=?, last_updated=? WHERE uuid=? AND user_id=?`
   ).bind(
     body.battery_level,
     body.is_charging,
-    body.battery_capacity,
     body.temperature,
     body.voltage,
     body.os_version || null,
@@ -97,7 +101,7 @@ export async function handleDeleteDevice(request, env, uuid) {
     }
   }
   // APIキー認証（従来通り）
-  const result = await verifyApiKeyAndUuid(request, env);
+  const result = await verifyApiKeyAndUuid(request, env, uuid);
   if (!result.ok) {
     return new Response(result.message, { status: result.status });
   }
@@ -118,7 +122,7 @@ export async function handleGetBatteryInfo(request, env, uuid) {
   try {
     const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
     const { results } = await env.DB.prepare(
-      "SELECT battery_level, is_charging, battery_capacity, temperature, voltage, last_updated FROM devices WHERE uuid = ? AND user_id = ?"
+      "SELECT battery_level, is_charging, temperature, voltage, last_updated FROM devices WHERE uuid = ? AND user_id = ?"
     ).bind(uuid, payload.user_id).all();
     if (!results.length) {
       return new Response(JSON.stringify({ success: false, error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
