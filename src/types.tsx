@@ -8,7 +8,7 @@ export interface Device {
   name: string
   brand: string
   model: string
-  os_version: string
+  os_version?: string
   model_number: string
   battery_level: number
   battery_capacity?: number

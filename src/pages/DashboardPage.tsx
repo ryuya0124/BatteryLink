@@ -11,6 +11,7 @@ import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneMo
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
+import type { Device } from "../types";
 
 export default function DashboardPage() {
   const { user, token, login, logout, setAutoUpdate } = useAuthContext();
@@ -21,6 +22,7 @@ export default function DashboardPage() {
   };
   const navigate = useNavigate();
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(user);
 
@@ -91,13 +93,13 @@ export default function DashboardPage() {
 
   const handleAddDevice = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!user) return;
     const newDevice = {
       uuid: crypto.randomUUID(),
       name: deviceName,
       brand: deviceBrand,
       model: deviceModel,
-      os_version: deviceOsVersion,
       model_number: deviceModelNumber,
       battery_level: batteryLevel,
       user_id: user.id,
@@ -108,15 +110,37 @@ export default function DashboardPage() {
       temperature: undefined,
       voltage: undefined,
     };
-    await addDevice(newDevice);
-    setShowAddDevice(false);
-    setDeviceName("");
-    setDeviceBrand("");
-    setDeviceModel("");
-    setDeviceOsVersion("");
-    setDeviceModelNumber("");
-    setBatteryLevel(undefined);
-    setSelectedModelInfo(null);
+    try {
+      await addDevice(newDevice);
+      setShowAddDevice(false);
+      setDeviceName("");
+      setDeviceBrand("");
+      setDeviceModel("");
+      setDeviceOsVersion("");
+      setDeviceModelNumber("");
+      setBatteryLevel(undefined);
+      setSelectedModelInfo(null);
+    } catch (err: any) {
+      setError("デバイス追加に失敗しました: " + (err?.message || "不明なエラー"));
+    }
+  };
+
+  const handleUpdateDevice = async (uuid: string, updateData: Partial<Device>) => {
+    setError(null);
+    try {
+      await updateDevice(uuid, updateData);
+    } catch (err: any) {
+      setError("デバイス更新に失敗しました: " + (err?.message || "不明なエラー"));
+    }
+  };
+
+  const handleDeleteDevice = async (uuid: string) => {
+    setError(null);
+    try {
+      await deleteDevice(uuid);
+    } catch (err: any) {
+      setError("デバイス削除に失敗しました: " + (err?.message || "不明なエラー"));
+    }
   };
 
   const updateDeviceBattery = useCallback(async (deviceUuid: string) => {
@@ -160,6 +184,7 @@ export default function DashboardPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
+        {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2">{error}</div>}
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
@@ -206,12 +231,8 @@ export default function DashboardPage() {
             setDeviceBrand={setDeviceBrand}
             deviceModel={deviceModel}
             setDeviceModel={setDeviceModel}
-            deviceOsVersion={deviceOsVersion}
-            setDeviceOsVersion={setDeviceOsVersion}
             deviceModelNumber={deviceModelNumber}
             setDeviceModelNumber={setDeviceModelNumber}
-            batteryLevel={batteryLevel}
-            setBatteryLevel={setBatteryLevel}
             phoneModels={phoneModels}
             selectedModelInfo={selectedModelInfo}
             onSubmit={handleAddDevice}
@@ -222,8 +243,8 @@ export default function DashboardPage() {
             <DeviceCard
               key={device.uuid}
               device={device}
-              onUpdate={(uuid) => updateDevice(uuid, { /* 必要な更新データ */ })}
-              onDelete={deleteDevice}
+              onUpdate={(uuid) => handleUpdateDevice(uuid, {/* 必要な更新データ */})}
+              onDelete={handleDeleteDevice}
               updating={updatingDevices.has(device.uuid)}
               getBatteryColor={getBatteryColor}
               getBatteryCapacityColor={getBatteryCapacityColor}

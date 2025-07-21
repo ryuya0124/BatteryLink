@@ -15,12 +15,8 @@ interface AddDeviceDialogProps {
   setDeviceBrand: (v: string) => void
   deviceModel: string
   setDeviceModel: (v: string) => void
-  deviceOsVersion: string
-  setDeviceOsVersion: (v: string) => void
   deviceModelNumber: string
   setDeviceModelNumber: (v: string) => void
-  batteryLevel: number
-  setBatteryLevel: (v: number) => void
   phoneModels: Record<string, any[]>
   selectedModelInfo: any
   onSubmit: (e: React.FormEvent) => void
@@ -35,12 +31,8 @@ export const AddDeviceDialog: React.FC<AddDeviceDialogProps> = ({
   setDeviceBrand,
   deviceModel,
   setDeviceModel,
-  deviceOsVersion,
-  setDeviceOsVersion,
   deviceModelNumber,
   setDeviceModelNumber,
-  batteryLevel,
-  setBatteryLevel,
   phoneModels,
   selectedModelInfo,
   onSubmit,
@@ -101,51 +93,22 @@ export const AddDeviceDialog: React.FC<AddDeviceDialogProps> = ({
           </div>
         )}
         {selectedModelInfo && (
-          <>
-            <div>
-              <Label htmlFor="deviceOsVersion">OSバージョン</Label>
-              <Select value={deviceOsVersion} onValueChange={setDeviceOsVersion} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="OSバージョンを選択" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedModelInfo.osVersions.map((version: string) => (
-                    <SelectItem key={version} value={version}>
-                      {version}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div>
-              <Label htmlFor="deviceModelNumber">型番</Label>
-              <Select value={deviceModelNumber} onValueChange={setDeviceModelNumber} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="型番を選択" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedModelInfo.modelNumbers.map((modelNumber: string) => (
-                    <SelectItem key={modelNumber} value={modelNumber}>
-                      {modelNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          </>
+          <div>
+            <Label htmlFor="deviceModelNumber">型番</Label>
+            <Select value={deviceModelNumber} onValueChange={setDeviceModelNumber} required>
+              <SelectTrigger>
+                <SelectValue placeholder="型番を選択" />
+              </SelectTrigger>
+              <SelectContent>
+                {selectedModelInfo.modelNumbers.map((modelNumber: string) => (
+                  <SelectItem key={modelNumber} value={modelNumber}>
+                    {modelNumber}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         )}
-        <div>
-          <Label htmlFor="batteryLevel">初期バッテリー残量 (%)</Label>
-          <Input
-            id="batteryLevel"
-            type="number"
-            min="0"
-            max="100"
-            value={batteryLevel}
-            onChange={(e) => setBatteryLevel(Number(e.target.value))}
-            required
-          />
-        </div>
         <Button type="submit" className="w-full">
           デバイスを追加
         </Button>

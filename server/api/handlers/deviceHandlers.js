@@ -39,20 +39,21 @@ export async function handlePostDevice(request, env) {
       crypto.randomUUID(),
       payload.user_id,
       uuid,
-      body.name,
-      body.brand,
-      body.model,
-      body.os_version,
-      body.model_number,
-      body.battery_level,
-      body.is_charging || false,
-      body.battery_capacity || null,
-      body.temperature || null,
-      body.voltage || null,
+      body.name !== undefined ? body.name : null,
+      body.brand !== undefined ? body.brand : null,
+      body.model !== undefined ? body.model : null,
+      body.os_version !== undefined ? body.os_version : null,
+      body.model_number !== undefined ? body.model_number : null,
+      body.battery_level !== undefined ? body.battery_level : null,
+      body.is_charging !== undefined ? body.is_charging : null,
+      body.battery_capacity !== undefined ? body.battery_capacity : null,
+      body.temperature !== undefined ? body.temperature : null,
+      body.voltage !== undefined ? body.voltage : null,
       new Date().toISOString()
     ).run();
     return new Response("デバイス追加完了", { status: 201 });
   } catch (e) {
+    console.log("handlePostDevice error:", e);
     return new Response("追加エラー", { status: 400 });
   }
 }
@@ -64,13 +65,14 @@ export async function handlePutDevice(request, env, uuid) {
   }
   const body = await request.json();
   await env.DB.prepare(
-    `UPDATE devices SET battery_level=?, is_charging=?, battery_capacity=?, temperature=?, voltage=?, last_updated=? WHERE uuid=? AND user_id=?`
+    `UPDATE devices SET battery_level=?, is_charging=?, battery_capacity=?, temperature=?, voltage=?, os_version=?, last_updated=? WHERE uuid=? AND user_id=?`
   ).bind(
     body.battery_level,
     body.is_charging,
     body.battery_capacity,
     body.temperature,
     body.voltage,
+    body.os_version || null,
     new Date().toISOString(),
     uuid,
     result.userId
