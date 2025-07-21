@@ -1,7 +1,7 @@
 import { handleLogin, handleRefresh, handleLogout, handleSignup } from "./authHandlers.js";
 import { verifyApiKeyAndUuid } from "./utils.js";
 import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice } from "./handlers/deviceHandlers.js";
-import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey } from "./handlers/apiKeyHandlers.js";
+import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
 import { handleMe } from "./handlers/meHandler.js";
 
 export default {
@@ -52,6 +52,10 @@ export default {
     if (pathname.startsWith("/api/api-keys/") && request.method === "DELETE") {
       const id = decodeURIComponent(pathname.split("/api/api-keys/")[1]);
       return handleDeleteApiKey(request, env, id);
+    }
+    if (pathname.startsWith("/api/api-keys/") && request.method === "PATCH") {
+      const id = decodeURIComponent(pathname.split("/api/api-keys/")[1]);
+      return handlePatchApiKey(request, env, id);
     }
     // ...他API
     if (pathname.startsWith("/api/")) {
