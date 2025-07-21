@@ -10,11 +10,13 @@ export async function handleGetDevices(request, env) {
   }
   try {
     const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
+    // idを除外しuuidのみ返す
     const { results } = await env.DB.prepare(
-      "SELECT * FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
+      "SELECT uuid, name, brand, model, os_version, model_number, battery_level, battery_capacity, last_updated, user_id, is_charging, temperature, voltage FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
     ).bind(payload.user_id).all();
     return new Response(JSON.stringify(results), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (e) {
+    console.log("handleGetDevices error:", e);
     return new Response("認証エラー", { status: 401 });
   }
 }
@@ -77,6 +79,22 @@ export async function handlePutDevice(request, env, uuid) {
 }
 
 export async function handleDeleteDevice(request, env, uuid) {
+  // まずJWT認証を試す
+  const cookie = request.headers.get("Cookie") || "";
+  const match = cookie.match(/token=([^;]+)/);
+  const token = match ? match[1] : null;
+  if (token) {
+    try {
+      const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
+      await env.DB.prepare(
+        `DELETE FROM devices WHERE uuid=? AND user_id=?`
+      ).bind(uuid, payload.user_id).run();
+      return new Response("デバイス削除完了", { status: 200 });
+    } catch (e) {
+      // JWT認証失敗時はAPIキー認証にフォールバック
+    }
+  }
+  // APIキー認証（従来通り）
   const result = await verifyApiKeyAndUuid(request, env);
   if (!result.ok) {
     return new Response(result.message, { status: result.status });
@@ -85,4 +103,29 @@ export async function handleDeleteDevice(request, env, uuid) {
     `DELETE FROM devices WHERE uuid=? AND user_id=?`
   ).bind(uuid, result.userId).run();
   return new Response("デバイス削除完了", { status: 200 });
+}
+
+// /api/battery/:uuid
+export async function handleGetBatteryInfo(request, env, uuid) {
+  const cookie = request.headers.get("Cookie") || "";
+  const match = cookie.match(/token=([^;]+)/);
+  const token = match ? match[1] : null;
+  if (!token) {
+    return new Response(JSON.stringify({ success: false, error: "認証が必要です" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
+  try {
+    const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
+    const { results } = await env.DB.prepare(
+      "SELECT battery_level, is_charging, battery_capacity, temperature, voltage, last_updated FROM devices WHERE uuid = ? AND user_id = ?"
+    ).bind(uuid, payload.user_id).all();
+    if (!results.length) {
+      return new Response(JSON.stringify({ success: false, error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
+    }
+    return new Response(
+      JSON.stringify({ success: true, data: results[0] }),
+      { status: 200, headers: { "Content-Type": "application/json" } }
+    );
+  } catch (e) {
+    return new Response(JSON.stringify({ success: false, error: "認証エラー" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  }
 } 

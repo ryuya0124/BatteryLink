@@ -27,6 +27,9 @@ export default {
     if (pathname === "/api/auth/me" && request.method === "GET") {
       return handleMe(request, env);
     }
+    if (pathname === "/api/auth/me" && request.method === "PATCH") {
+      return handleMe(request, env);
+    }
     // デバイスAPI
     if (pathname === "/api/devices" && request.method === "GET") {
       return handleGetDevices(request, env);
@@ -41,6 +44,12 @@ export default {
     if (pathname.startsWith("/api/devices/") && request.method === "DELETE") {
       const uuid = decodeURIComponent(pathname.split("/api/devices/")[1]);
       return handleDeleteDevice(request, env, uuid);
+    }
+    // デバイスバッテリー情報API
+    if (pathname.startsWith("/api/battery/") && request.method === "GET") {
+      const uuid = decodeURIComponent(pathname.split("/api/battery/")[1]);
+      const { handleGetBatteryInfo } = await import("./handlers/deviceHandlers.js");
+      return handleGetBatteryInfo(request, env, uuid);
     }
     // APIキーAPI
     if (pathname === "/api/api-keys" && request.method === "GET") {

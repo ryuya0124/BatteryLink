@@ -4,7 +4,7 @@ export interface AppUser {
 }
 
 export interface Device {
-  id: string
+  uuid: string
   name: string
   brand: string
   model: string
@@ -17,5 +17,4 @@ export interface Device {
   is_charging?: boolean
   temperature?: number
   voltage?: string
-  auto_update?: boolean
 }

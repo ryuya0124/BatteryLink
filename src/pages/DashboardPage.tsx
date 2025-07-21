@@ -13,9 +13,12 @@ import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 
 export default function DashboardPage() {
-  const { user, token, login, logout } = useAuthContext();
+  const { user, token, login, logout, setAutoUpdate } = useAuthContext();
   const [showAddDevice, setShowAddDevice] = useState(false);
-  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(true);
+  const autoUpdateEnabled = !!user?.auto_update;
+  const setAutoUpdateEnabled = (enabled: boolean) => {
+    setAutoUpdate(enabled);
+  };
   const navigate = useNavigate();
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
 
@@ -31,7 +34,7 @@ export default function DashboardPage() {
   const [deviceModel, setDeviceModel] = useState("");
   const [deviceOsVersion, setDeviceOsVersion] = useState("");
   const [deviceModelNumber, setDeviceModelNumber] = useState("");
-  const [batteryLevel, setBatteryLevel] = useState(100);
+  const [batteryLevel, setBatteryLevel] = useState<number | undefined>(undefined);
   const [selectedModelInfo, setSelectedModelInfo] = useState<any>(null);
 
   useEffect(() => {
@@ -48,9 +51,9 @@ export default function DashboardPage() {
     return () => clearInterval(interval);
   }, [autoUpdateEnabled, devices]);
 
-  const fetchBatteryInfo = async (deviceId: string) => {
+  const fetchBatteryInfo = async (deviceUuid: string) => {
     try {
-      const response = await fetch(`/api/battery/${deviceId}`);
+      const response = await fetch(`/api/battery/${deviceUuid}`);
       return await response.json();
     } catch (error) {
       return { success: false, error: "Network error" };
@@ -90,6 +93,7 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!user) return;
     const newDevice = {
+      uuid: crypto.randomUUID(),
       name: deviceName,
       brand: deviceBrand,
       model: deviceModel,
@@ -98,10 +102,11 @@ export default function DashboardPage() {
       battery_level: batteryLevel,
       user_id: user.id,
       last_updated: new Date().toISOString(),
-      auto_update: true,
+      auto_update: undefined, // 送らない
       is_charging: false,
-      temperature: deviceBrand !== "Apple" ? 30 : undefined,
-      voltage: deviceBrand !== "Apple" ? "3.8" : undefined,
+      // temperature, voltageは未入力ならundefinedのまま
+      temperature: undefined,
+      voltage: undefined,
     };
     await addDevice(newDevice);
     setShowAddDevice(false);
@@ -110,13 +115,13 @@ export default function DashboardPage() {
     setDeviceModel("");
     setDeviceOsVersion("");
     setDeviceModelNumber("");
-    setBatteryLevel(100);
+    setBatteryLevel(undefined);
     setSelectedModelInfo(null);
   };
 
-  const updateDeviceBattery = useCallback(async (deviceId: string) => {
+  const updateDeviceBattery = useCallback(async (deviceUuid: string) => {
     try {
-      const result = await fetchBatteryInfo(deviceId);
+      const result = await fetchBatteryInfo(deviceUuid);
       if (result.success && result.data) {
         const updatedDevice: any = {
           battery_level: result.data.batteryLevel,
@@ -137,8 +142,9 @@ export default function DashboardPage() {
   }, []);
 
   const updateAllDevicesBattery = useCallback(async () => {
-    const updatePromises = devices.map((device) => updateDeviceBattery(device.id));
-    await Promise.all(updatePromises);
+    for (const device of devices) {
+      await updateDeviceBattery(device.uuid);
+    }
   }, [devices, updateDeviceBattery]);
 
   useEffect(() => {
@@ -214,11 +220,11 @@ export default function DashboardPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedDevices.map((device) => (
             <DeviceCard
-              key={device.id}
+              key={device.uuid}
               device={device}
-              onUpdate={(id) => updateDevice(id, { /* 必要な更新データ */ })}
+              onUpdate={(uuid) => updateDevice(uuid, { /* 必要な更新データ */ })}
               onDelete={deleteDevice}
-              updating={updatingDevices.has(device.id)}
+              updating={updatingDevices.has(device.uuid)}
               getBatteryColor={getBatteryColor}
               getBatteryCapacityColor={getBatteryCapacityColor}
               getBatteryCapacityBg={getBatteryCapacityBg}

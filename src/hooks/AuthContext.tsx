@@ -3,6 +3,7 @@ import { useAuth, AuthContextValue } from "./useAuth"
 
 export interface AuthContextValueWithLoading extends AuthContextValue {
   authLoading: boolean
+  setAutoUpdate: (enabled: boolean) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValueWithLoading | undefined>(undefined)

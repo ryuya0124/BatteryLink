@@ -7,6 +7,7 @@ export interface AuthContextValue {
   refresh: () => Promise<void>
   logout: () => Promise<void>
   fetchWithAuth: (input: RequestInfo, init?: RequestInit) => Promise<Response>
+  setAutoUpdate: (enabled: boolean) => Promise<void>
 }
 
 export function useAuth(): AuthContextValue & { authLoading: boolean } {
@@ -110,5 +111,19 @@ export function useAuth(): AuthContextValue & { authLoading: boolean } {
     return res
   }, [token, refresh])
 
-  return { token, user, login, refresh, logout, fetchWithAuth, authLoading }
+  // ユーザーの自動更新設定を更新
+  const setAutoUpdate = useCallback(async (enabled: boolean) => {
+    const res = await fetch("/api/auth/me", {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ auto_update: enabled }),
+      credentials: "include"
+    });
+    if (res.ok) {
+      const userData = await res.json();
+      setUser(userData);
+    }
+  }, []);
+
+  return { token, user, login, refresh, logout, fetchWithAuth, authLoading, setAutoUpdate };
 } 

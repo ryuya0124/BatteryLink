@@ -37,9 +37,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               {(device.brand || device.model) ? `${device.brand || "-"} ${device.model || "-"}` : <span className="text-gray-400">(未登録)</span>}
             </div>
             <div className="text-xs text-gray-400">
-              {device.os_version || "-"}
+              {device.os_version || <span className="text-gray-400">未登録</span>}
               {(device.os_version && device.model_number) ? " • " : ""}
-              {device.model_number || (device.os_version ? "-" : "")}
+              {device.model_number || (device.os_version ? <span className="text-gray-400">-</span> : <span className="text-gray-400">未登録</span>)}
             </div>
           </div>
         </div>
@@ -49,9 +49,13 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               <Zap className="h-4 w-4 mr-1 inline" />充電中
             </Badge>
           )}
-          {device.temperature !== undefined && (
+          {device.temperature !== undefined && device.temperature !== null ? (
             <Badge variant="outline" className="text-orange-600 border-orange-400">
               <Thermometer className="h-4 w-4 mr-1 inline" />{device.temperature}℃
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-gray-400 border-gray-300">
+              <Thermometer className="h-4 w-4 mr-1 inline" />未登録
             </Badge>
           )}
         </div>
@@ -59,10 +63,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     </CardHeader>
     <CardContent>
       <div className="flex items-center gap-4 mb-2">
-        <Progress value={typeof device.battery_level === "number" ? device.battery_level : 0} className="flex-1 h-3" />
-        <span className={`ml-2 font-bold text-lg ${getBatteryColor(typeof device.battery_level === "number" ? device.battery_level : 0)}`}>
-          {typeof device.battery_level === "number" ? `${device.battery_level}%` : <span className="text-gray-400">未登録</span>}
-        </span>
+        {typeof device.battery_level === "number" ? (
+          <>
+            <Progress value={device.battery_level} className="flex-1 h-3" />
+            <span className={`ml-2 font-bold text-lg ${getBatteryColor(device.battery_level)}`}>
+              {device.battery_level}%
+            </span>
+          </>
+        ) : (
+          <span className="flex-1 text-gray-400">未登録</span>
+        )}
       </div>
       {typeof device.battery_capacity === "number" ? (
         <div className={`text-xs font-medium px-2 py-1 rounded ${getBatteryCapacityBg(device.battery_capacity)} ${getBatteryCapacityColor(device.battery_capacity)}`}>
@@ -71,12 +81,15 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
       ) : (
         <div className="text-xs text-gray-400">バッテリー容量: 未登録</div>
       )}
+      <div className="text-xs text-gray-500 mt-1">
+        電圧: {device.voltage ? `${device.voltage}V` : <span className="text-gray-400">未登録</span>}
+      </div>
       <div className="flex gap-2 mt-4">
-        <Button variant="outline" size="sm" onClick={() => onUpdate(device.id)} disabled={updating}>
+        <Button variant="outline" size="sm" onClick={() => onUpdate(device.uuid)} disabled={updating}>
           <RefreshCw className={`h-4 w-4 mr-1 ${updating ? "animate-spin" : ""}`} />
           更新
         </Button>
-        <Button variant="destructive" size="sm" onClick={() => onDelete(device.id)}>
+        <Button variant="destructive" size="sm" onClick={() => onDelete(device.uuid)}>
           <Trash2 className="h-4 w-4 mr-1" />
           削除
         </Button>
