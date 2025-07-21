@@ -40,9 +40,8 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         return
       }
       const data = await res.json()
-      // JWTからuser情報を抽出
-      const payload = JSON.parse(atob(data.token.split(".")[1]))
-      onAuthSuccess({ id: payload.user_id, email }, password)
+      // JWTからuser情報を抽出しない（tokenはCookie管理）
+      onAuthSuccess({ id: email, email }, password)
       setLoading(false)
     } catch (e: any) {
       setError("通信エラーが発生しました")
@@ -56,7 +55,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Battery className="h-8 w-8 text-blue-600" />
-            <CardTitle className="text-2xl">バッテリートラッカー</CardTitle>
+            <CardTitle className="text-2xl">BatteryLink</CardTitle>
           </div>
           <CardDescription>スマートフォンのバッテリー残量を管理しましょう</CardDescription>
         </CardHeader>
@@ -70,13 +69,15 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
               <form onSubmit={handleAuth} className="space-y-4">
                 <div>
                   <Label htmlFor="email">メールアドレス</Label>
-                  <Input id="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required />
+                  <Input id="email" type="email" name="username" autoComplete="username" value={email} onChange={(e) => setEmail(e.target.value)} required />
                 </div>
                 <div>
                   <Label htmlFor="password">パスワード</Label>
                   <Input
                     id="password"
                     type="password"
+                    name="password"
+                    autoComplete="current-password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     required

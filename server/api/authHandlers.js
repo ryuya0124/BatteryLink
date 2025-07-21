@@ -44,12 +44,12 @@ export async function handleLogin(request, env) {
       request.headers.get("User-Agent") || ""
     ).run();
     console.log("after DB insert");
-    const cookie = `refresh_token=${refresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
-    console.log("before return Response");
-    return new Response(JSON.stringify({ token: jwt }), {
+    const cookieRefresh = `refresh_token=${refresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
+    const cookieToken = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900`;
+    return new Response(JSON.stringify({ success: true }), {
       headers: {
         "Content-Type": "application/json",
-        "Set-Cookie": cookie
+        "Set-Cookie": cookieToken + ", " + cookieRefresh
       }
     });
   } catch (err) {
@@ -101,11 +101,12 @@ export async function handleRefresh(request, env) {
       expires.toISOString(),
       token.id
     ).run();
-    const setCookie = `refresh_token=${newRefresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
-    return new Response(JSON.stringify({ token: jwt }), {
+    const cookieRefresh = `refresh_token=${newRefresh}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=604800`;
+    const cookieToken = `token=${jwt}; HttpOnly; Secure; SameSite=Strict; Path=/; Max-Age=900`;
+    return new Response(JSON.stringify({ success: true }), {
       headers: {
         "Content-Type": "application/json",
-        "Set-Cookie": setCookie
+        "Set-Cookie": cookieToken + ", " + cookieRefresh
       }
     });
   } catch (err) {

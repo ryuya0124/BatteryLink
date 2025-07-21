@@ -73,3 +73,20 @@ export const phoneModels = {
     { model: "OnePlus 9", osVersions: ["Android 11", "Android 12"], modelNumbers: ["LE2113", "LE2115"] },
   ],
 }
+
+// JWT自動リフレッシュ付きfetchラッパー（Cookieベース認証）
+export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
+  init.credentials = "include"; // Cookieを常に送信
+  let res = await fetch(input, init);
+  if (res.status === 401) {
+    const refreshRes = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
+    if (refreshRes.ok) {
+      // JWTはCookieで自動管理されるので、何も保存しない
+      res = await fetch(input, init);
+    } else {
+      window.location.href = "/login";
+      return res;
+    }
+  }
+  return res;
+}

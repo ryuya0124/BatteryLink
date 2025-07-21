@@ -1,86 +1,57 @@
 import { useState, useCallback } from "react"
 import type { AppUser, Device } from "@/types"
-
-// supabaseのmock
-const createClient = () => ({
-  from: (table: string) => ({
-    select: (columns: string) => ({
-      eq: (column: string, value: any) => ({
-        order: (column: string, options: any) =>
-          Promise.resolve({
-            data: JSON.parse(localStorage.getItem(`${table}_${value}`) || "[]"),
-            error: null,
-          }),
-      }),
-    }),
-    insert: (data: any[]) => ({
-      select: () => {
-        // idを付与
-        const newItem = { ...data[0], id: Date.now().toString() }
-        const existing = JSON.parse(localStorage.getItem(`${table}_${data[0].user_id}`) || "[]")
-        const updated = [...existing, newItem]
-        localStorage.setItem(`${table}_${data[0].user_id}`, JSON.stringify(updated))
-        return Promise.resolve({ data: [newItem], error: null })
-      },
-    }),
-    update: (updateData: any) => ({
-      eq: (column: string, value: any) => ({
-        select: () => {
-          const existing = JSON.parse(localStorage.getItem(`${table}_demo-user`) || "[]")
-          const updated = existing.map((item: any) => (item.id === value ? { ...item, ...updateData } : item))
-          localStorage.setItem(`${table}_demo-user`, JSON.stringify(updated))
-          return Promise.resolve({ data: updated.filter((item: any) => item.id === value), error: null })
-        },
-      }),
-    }),
-    delete: () => ({
-      eq: (column: string, value: any) => {
-        const existing = JSON.parse(localStorage.getItem(`${table}_demo-user`) || "[]")
-        const updated = existing.filter((item: any) => item.id !== value)
-        localStorage.setItem(`${table}_demo-user`, JSON.stringify(updated))
-        return Promise.resolve({ error: null })
-      },
-    }),
-  }),
-})
-const supabase = createClient()
+import { fetchWithAuth } from "@/lib/utils"
 
 export function useDevices(user: AppUser | null) {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(false)
   const [updatingDevices, setUpdatingDevices] = useState<Set<string>>(new Set())
 
+  // API経由でデバイス一覧取得
   const fetchDevices = useCallback(async () => {
     if (!user) return
     setLoading(true)
-    const { data } = await supabase.from("devices").select("*").eq("user_id", user.id).order("last_updated", { ascending: false })
-    setDevices(data || [])
+    const res = await fetchWithAuth("/api/devices")
+    if (res && res.ok) {
+      const data = await res.json()
+      setDevices(data)
+    }
     setLoading(false)
   }, [user])
 
-  // 修正: Omit<Device, 'id'>型で受け取り、内部でidを付与
+  // デバイス追加
   const addDevice = useCallback(async (device: Omit<Device, "id">) => {
     if (!user) return
-    const newDevice = { ...device, id: Date.now().toString() }
-    const { data } = await supabase.from("devices").insert([newDevice]).select()
-    if (data) setDevices((prev) => [...prev, data[0]])
-  }, [user])
+    const res = await fetchWithAuth("/api/devices", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(device),
+    })
+    if (res && res.ok) {
+      await fetchDevices()
+    }
+  }, [user, fetchDevices])
 
-  const updateDevice = useCallback(async (id: string, updateData: Partial<Device>) => {
-    setUpdatingDevices((prev) => new Set(prev).add(id))
-    const { data } = await supabase.from("devices").update(updateData).eq("id", id).select()
-    if (data) setDevices((prev) => prev.map((d) => (d.id === id ? { ...d, ...data[0] } : d)))
+  // デバイス更新
+  const updateDevice = useCallback(async (uuid: string, updateData: Partial<Device>) => {
+    setUpdatingDevices((prev) => new Set(prev).add(uuid))
     setUpdatingDevices((prev) => {
       const newSet = new Set(prev)
-      newSet.delete(id)
+      newSet.delete(uuid)
       return newSet
     })
-  }, [])
+    await fetchDevices()
+  }, [fetchDevices])
 
-  const deleteDevice = useCallback(async (id: string) => {
-    await supabase.from("devices").delete().eq("id", id)
-    setDevices((prev) => prev.filter((d) => d.id !== id))
-  }, [])
+  // デバイス削除
+  const deleteDevice = useCallback(async (uuid: string) => {
+    await fetchWithAuth(`/api/devices/${encodeURIComponent(uuid)}`, {
+      method: "DELETE",
+    })
+    await fetchDevices()
+  }, [fetchDevices])
 
   return { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices }
-} 
+}
