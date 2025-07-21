@@ -32,3 +32,5 @@ BatteryLink設計書.xlsx
 cert/private.pem
 cert/public.pem
 wrangler.toml
+cert/ed25519-private.pem
+cert/ed25519-public.pem

@@ -30,16 +30,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
       <div className="flex items-center justify-between">
         <div>
           <CardTitle className="text-lg font-semibold">
-            {device.name}
+            {device.name || <span className="text-gray-400">(未登録)</span>}
           </CardTitle>
           <div className="mt-1">
             <div className="text-sm text-gray-500">
-              {device.brand} {device.model}
+              {(device.brand || device.model) ? `${device.brand || "-"} ${device.model || "-"}` : <span className="text-gray-400">(未登録)</span>}
             </div>
             <div className="text-xs text-gray-400">
-              {device.os_version}
-              {device.os_version && device.model_number ? " • " : ""}
-              {device.model_number}
+              {device.os_version || "-"}
+              {(device.os_version && device.model_number) ? " • " : ""}
+              {device.model_number || (device.os_version ? "-" : "")}
             </div>
           </div>
         </div>
@@ -59,13 +59,17 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     </CardHeader>
     <CardContent>
       <div className="flex items-center gap-4 mb-2">
-        <Progress value={device.battery_level} className="flex-1 h-3" />
-        <span className={`ml-2 font-bold text-lg ${getBatteryColor(device.battery_level)}`}>{device.battery_level}%</span>
+        <Progress value={typeof device.battery_level === "number" ? device.battery_level : 0} className="flex-1 h-3" />
+        <span className={`ml-2 font-bold text-lg ${getBatteryColor(typeof device.battery_level === "number" ? device.battery_level : 0)}`}>
+          {typeof device.battery_level === "number" ? `${device.battery_level}%` : <span className="text-gray-400">未登録</span>}
+        </span>
       </div>
-      {device.battery_capacity && (
+      {typeof device.battery_capacity === "number" ? (
         <div className={`text-xs font-medium px-2 py-1 rounded ${getBatteryCapacityBg(device.battery_capacity)} ${getBatteryCapacityColor(device.battery_capacity)}`}>
           バッテリー容量: {device.battery_capacity}mAh
         </div>
+      ) : (
+        <div className="text-xs text-gray-400">バッテリー容量: 未登録</div>
       )}
       <div className="flex gap-2 mt-4">
         <Button variant="outline" size="sm" onClick={() => onUpdate(device.id)} disabled={updating}>
