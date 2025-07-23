@@ -48,22 +48,22 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   }
 
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/80 backdrop-blur-sm">
+    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/80 backdrop-blur-sm">
       <CardHeader className="pb-3">
-        <div className="flex items-start justify-between">
-          <div className="flex items-start gap-3 flex-1">
+        <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2 sm:gap-0">
+          <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* デバイスアイコン */}
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-100 shrink-0">
               <Smartphone className="w-5 h-5 text-blue-600" />
             </div>
 
             {/* デバイス情報 */}
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-lg font-semibold text-gray-900 truncate">
+              <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                 {device.name || <span className="text-gray-400 italic">未登録デバイス</span>}
               </CardTitle>
               <div className="mt-1 space-y-1">
-                <div className="text-sm text-gray-600 truncate">
+                <div className="text-xs sm:text-sm text-gray-600 truncate">
                   {device.brand || device.model ? (
                     `${device.brand || "不明"} ${device.model || ""}`.trim()
                   ) : (
@@ -83,11 +83,11 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 py-0 flex items-center gap-1"
+            className="h-8 px-2 py-0 flex items-center gap-1 whitespace-nowrap"
             onClick={() => setEditOpen(true)}
           >
             <Pencil className="w-4 h-4" />
-            編集
+            <span className="hidden xs:inline">編集</span>
           </Button>
         </div>
       </CardHeader>
@@ -98,19 +98,19 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Battery className="w-4 h-4 text-gray-500" />
-              <span className="text-sm font-medium text-gray-700">バッテリー</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-700">バッテリー</span>
             </div>
             {typeof device.battery_level === "number" ? (
-              <span className={`font-bold text-lg ${getBatteryColor(device.battery_level)}`}>
+              <span className={`font-bold text-base sm:text-lg ${getBatteryColor(device.battery_level)}`}>
                 {device.battery_level}%
               </span>
             ) : (
-              <span className="text-gray-400 text-sm">未登録</span>
+              <span className="text-gray-400 text-xs sm:text-sm">未登録</span>
             )}
           </div>
 
           {typeof device.battery_level === "number" ? (
-            <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden">
+            <div className="relative h-3 sm:h-4 bg-gray-100 rounded-full overflow-hidden">
               <div
                 className={`h-full ${getProgressBarClass(device.battery_level, device.is_charging === true)}`}
                 style={{ width: `${device.battery_level}%` }}
@@ -127,7 +127,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               </div>
             </div>
           ) : (
-            <div className="h-4 bg-gray-100 rounded-full">
+            <div className="h-3 sm:h-4 bg-gray-100 rounded-full">
               <div className="h-full bg-gray-300 rounded-full opacity-50" />
             </div>
           )}
@@ -182,21 +182,20 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
 
         {/* アクションボタン */}
-        <div className="flex gap-2">
+        <div className="flex flex-col sm:flex-row gap-2">
           <Button
             variant="outline"
-            size="sm"
             onClick={() => onUpdate(device.uuid)}
             disabled={updating}
-            className="flex-1"
+            className="flex-1 min-w-0 h-9 sm:h-8"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${updating ? "animate-spin" : ""}`} />
             {updating ? "更新中..." : "更新"}
           </Button>
           <Button
             variant="destructive"
-            size="sm"
             onClick={() => setConfirmDeleteOpen(true)}
+            className="flex-1 min-w-0 h-9 sm:h-8"
           >
             <Trash2 className="w-4 h-4 mr-1" />
             削除

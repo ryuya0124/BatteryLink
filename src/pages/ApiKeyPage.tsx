@@ -25,15 +25,14 @@ export default function ApiKeyPage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 justify-center sm:justify-start">
             <Battery className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
           </div>
-          <div className="flex items-center gap-4">
-            {/* メールアドレス表示を削除 */}
-            <Button variant="outline" onClick={() => navigate("/")}>ダッシュボード</Button>
-            <Button variant="outline" onClick={handleLogout}>
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full">
+            <Button variant="outline" onClick={() => navigate("/")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">ダッシュボード</Button>
+            <Button variant="outline" onClick={handleLogout} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">
               <LogOut className="h-4 w-4 mr-2" />
               ログアウト
             </Button>

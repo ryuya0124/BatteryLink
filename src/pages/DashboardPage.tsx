@@ -252,15 +252,15 @@ export default function DashboardPage() {
       <div className="container mx-auto px-4 py-8">
         {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2">{error}</div>}
         {/* Header */}
-        <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-2">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 justify-center sm:justify-start">
             <Battery className="h-8 w-8 text-blue-600" />
             <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" onClick={() => navigate("/account")}> <UserIcon className="h-4 w-4 mr-1" />アカウント</Button>
-            <Button variant="outline" onClick={() => navigate("/apikeys")}>APIキー管理</Button>
-            <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full">
+            <Button variant="outline" onClick={() => navigate("/account")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"> <UserIcon className="h-4 w-4 mr-1" />アカウント</Button>
+            <Button variant="outline" onClick={() => navigate("/apikeys")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">APIキー管理</Button>
+            <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">
               <LogOut className="h-4 w-4 mr-2" />
             </Button>
           </div>

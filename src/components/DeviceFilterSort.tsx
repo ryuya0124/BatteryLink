@@ -26,10 +26,10 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
   setFilterBattery,
   phoneModels,
 }) => (
-  <div className="flex gap-4 mb-6">
+  <div className="flex flex-wrap w-full gap-2 sm:gap-4 mb-6">
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="sm:w-auto min-w-0">
           <ArrowUpDown className="h-4 w-4 mr-2" />
           並び替え:{" "}
           {sortBy === "updated"
@@ -58,7 +58,7 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="sm:w-auto min-w-0">
           <ListFilter className="h-4 w-4 mr-2" />
           ブランド: {filterBrand === "all" ? "全て" : filterBrand}
         </Button>
@@ -77,7 +77,7 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
 
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline">
+        <Button variant="outline" className="sm:w-auto min-w-0">
           <ListFilter className="h-4 w-4 mr-2" />
           残量:{" "}
           {filterBattery === "all"
