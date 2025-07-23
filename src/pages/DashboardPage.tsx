@@ -284,23 +284,22 @@ export default function DashboardPage() {
           setFilterBattery={setFilterBattery}
           phoneModels={phoneModels}
         />
-        <div className="mb-6">
-          <AddDeviceDialog
-            open={showAddDevice}
-            onOpenChange={setShowAddDevice}
-            deviceName={deviceName}
-            setDeviceName={setDeviceName}
-            deviceBrand={deviceBrand}
-            setDeviceBrand={setDeviceBrand}
-            deviceModel={deviceModel}
-            setDeviceModel={setDeviceModel}
-            deviceModelNumber={deviceModelNumber}
-            setDeviceModelNumber={setDeviceModelNumber}
-            phoneModels={phoneModels}
-            selectedModelInfo={selectedModelInfo}
-            onSubmit={handleAddDevice}
-          />
-        </div>
+        {/* AddDeviceDialog本体は常にレンダリング */}
+        <AddDeviceDialog
+          open={showAddDevice}
+          onOpenChange={setShowAddDevice}
+          deviceName={deviceName}
+          setDeviceName={setDeviceName}
+          deviceBrand={deviceBrand}
+          setDeviceBrand={setDeviceBrand}
+          deviceModel={deviceModel}
+          setDeviceModel={setDeviceModel}
+          deviceModelNumber={deviceModelNumber}
+          setDeviceModelNumber={setDeviceModelNumber}
+          phoneModels={phoneModels}
+          selectedModelInfo={selectedModelInfo}
+          onSubmit={handleAddDevice}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredAndSortedDevices.map((device) => (
             <DeviceCard
@@ -315,6 +314,14 @@ export default function DashboardPage() {
             />
           ))}
         </div>
+        {/* デバイスが1つ以上あるとき、リストの下に追加ボタン */}
+        {devices.length > 0 && (
+          <div className="flex justify-center mt-8">
+            <Button variant="default" onClick={() => setShowAddDevice(true)}>
+              デバイスを追加
+            </Button>
+          </div>
+        )}
         {filteredAndSortedDevices.length === 0 && devices.length > 0 && (
           <NoDevices type="filtered" />
         )}

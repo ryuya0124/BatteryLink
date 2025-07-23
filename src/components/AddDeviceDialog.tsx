@@ -38,12 +38,6 @@ export const AddDeviceDialog: React.FC<AddDeviceDialogProps> = ({
   onSubmit,
 }) => (
   <Dialog open={open} onOpenChange={onOpenChange}>
-    <DialogTrigger asChild>
-      <Button>
-        <Plus className="h-4 w-4 mr-2" />
-        デバイスを追加
-      </Button>
-    </DialogTrigger>
     <DialogContent>
       <DialogHeader>
         <DialogTitle>新しいデバイスを追加</DialogTitle>

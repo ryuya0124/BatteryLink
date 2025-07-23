@@ -20,7 +20,7 @@ export const NoDevices: React.FC<NoDevicesProps> = ({ type, onAddDevice }) => (
         <h3 className="text-xl font-medium text-gray-900 mb-2">デバイスが登録されていません</h3>
         <p className="text-gray-500 mb-4">最初のスマートフォンを追加してバッテリー管理を始めましょう</p>
         {onAddDevice && (
-          <Button onClick={onAddDevice}>
+          <Button variant="default" onClick={onAddDevice}>
             <Plus className="h-4 w-4 mr-2" />
             デバイスを追加
           </Button>

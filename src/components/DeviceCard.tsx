@@ -8,6 +8,7 @@ import { Zap, Thermometer, RefreshCw, Trash2, Pencil, Battery, Smartphone } from
 import type { Device } from "@/types"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { DeviceEditDialog } from "@/components/DeviceEditDialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface DeviceCardProps {
   device: Device
@@ -29,6 +30,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   getBatteryCapacityBg,
 }) => {
   const [editOpen, setEditOpen] = React.useState(false)
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
 
   // バッテリーレベルに応じたプログレスバーのクラスを取得
   const getProgressBarClass = (level: number, isCharging: boolean) => {
@@ -79,9 +81,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
           {/* メニューボタン → 編集ボタンに変更 */}
           <Button
-            variant="ghost"
+            variant="outline"
             size="sm"
-            className="h-8 px-2 py-0 flex items-center gap-1 hover:bg-gray-100"
+            className="h-8 px-2 py-0 flex items-center gap-1"
             onClick={() => setEditOpen(true)}
           >
             <Pencil className="w-4 h-4" />
@@ -186,7 +188,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             size="sm"
             onClick={() => onUpdate(device.uuid)}
             disabled={updating}
-            className="flex-1 hover:bg-blue-50 hover:border-blue-300"
+            className="flex-1"
           >
             <RefreshCw className={`w-4 h-4 mr-2 ${updating ? "animate-spin" : ""}`} />
             {updating ? "更新中..." : "更新"}
@@ -194,8 +196,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           <Button
             variant="destructive"
             size="sm"
-            onClick={() => onDelete(device.uuid)}
-            className="hover:bg-red-600 hover:border-red-600"
+            onClick={() => setConfirmDeleteOpen(true)}
           >
             <Trash2 className="w-4 h-4 mr-1" />
             削除
@@ -212,6 +213,20 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           setEditOpen(false)
         }}
       />
+
+      {/* 削除確認ダイアログ */}
+      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>本当に削除しますか？</DialogTitle>
+            <DialogDescription>このデバイスを削除すると元に戻せません。本当に削除しますか？</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2 mt-6">
+            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>キャンセル</Button>
+            <Button variant="destructive" onClick={() => { onDelete(device.uuid); setConfirmDeleteOpen(false); }}>削除</Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       <style>{`
         /* 充電中 - 緑色のアニメーション */

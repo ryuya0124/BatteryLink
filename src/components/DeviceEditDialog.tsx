@@ -89,7 +89,7 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
           </div>
           <div className="flex justify-end gap-2 mt-6">
             <Button variant="outline" onClick={() => onOpenChange(false)}>キャンセル</Button>
-            <Button onClick={handleSave}>保存</Button>
+            <Button variant="default" onClick={handleSave}>保存</Button>
           </div>
         </div>
       </DialogContent>
