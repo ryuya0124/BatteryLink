@@ -1,25 +1,24 @@
-import { verifyJWT } from "../jwt.js";
+import { verifyAuth0JWT } from '../utils.js';
 import { randomOpaqueToken, sha256, verifyApiKeyAndUuid } from "../utils.js";
 
 export async function handleGetDevices(request, env) {
-  const cookie = request.headers.get("Cookie") || "";
-  const match = cookie.match(/token=([^;]+)/);
-  const token = match ? match[1] : null;
-  if (!token) {
-    return new Response("認証が必要です", { status: 401 });
+  const auth = request.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return new Response('Unauthorized', { status: 401 });
   }
+  const token = auth.slice(7);
+  const payload = await verifyAuth0JWT(token);
   try {
-    const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
     // idを除外しuuidのみ返す
     const { results } = await env.DB.prepare(
       "SELECT uuid, name, brand, model, os_version, model_number, battery_level, last_updated, user_id, is_charging, temperature, voltage FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
-    ).bind(payload.user_id).all();
+    ).bind(payload.sub).all();
     return new Response(JSON.stringify(results), {
       status: 200,
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
-      }
+      }　
     });
   } catch (e) {
     console.log("handleGetDevices error:", e);
@@ -28,14 +27,13 @@ export async function handleGetDevices(request, env) {
 }
 
 export async function handlePostDevice(request, env) {
-  const cookie = request.headers.get("Cookie") || "";
-  const match = cookie.match(/token=([^;]+)/);
-  const token = match ? match[1] : null;
-  if (!token) {
-    return new Response("認証が必要です", { status: 401 });
+  const auth = request.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return new Response('Unauthorized', { status: 401 });
   }
+  const token = auth.slice(7);
+  const payload = await verifyAuth0JWT(token);
   try {
-    const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
     const body = await request.json();
     const uuid = body.uuid || crypto.randomUUID();
     await env.DB.prepare(
@@ -43,7 +41,7 @@ export async function handlePostDevice(request, env) {
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
     ).bind(
       crypto.randomUUID(),
-      payload.user_id,
+      payload.sub,
       uuid,
       body.name !== undefined ? body.name : null,
       body.brand !== undefined ? body.brand : null,
@@ -86,15 +84,14 @@ export async function handlePutDevice(request, env, uuid) {
 
 export async function handleDeleteDevice(request, env, uuid) {
   // まずJWT認証を試す
-  const cookie = request.headers.get("Cookie") || "";
-  const match = cookie.match(/token=([^;]+)/);
-  const token = match ? match[1] : null;
-  if (token) {
+  const auth = request.headers.get('Authorization');
+  if (auth && auth.startsWith('Bearer ')) {
+    const token = auth.slice(7);
     try {
-      const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
+      const payload = await verifyAuth0JWT(token);
       await env.DB.prepare(
         `DELETE FROM devices WHERE uuid=? AND user_id=?`
-      ).bind(uuid, payload.user_id).run();
+      ).bind(uuid, payload.sub).run();
       return new Response("デバイス削除完了", { status: 200 });
     } catch (e) {
       // JWT認証失敗時はAPIキー認証にフォールバック
@@ -113,17 +110,16 @@ export async function handleDeleteDevice(request, env, uuid) {
 
 // /api/battery/:uuid
 export async function handleGetBatteryInfo(request, env, uuid) {
-  const cookie = request.headers.get("Cookie") || "";
-  const match = cookie.match(/token=([^;]+)/);
-  const token = match ? match[1] : null;
-  if (!token) {
-    return new Response(JSON.stringify({ success: false, error: "認証が必要です" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  const auth = request.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
+  const token = auth.slice(7);
+  const payload = await verifyAuth0JWT(token);
   try {
-    const payload = await verifyJWT(token, env.JWT_PUBLIC_KEY);
     const { results } = await env.DB.prepare(
       "SELECT battery_level, is_charging, temperature, voltage, last_updated FROM devices WHERE uuid = ? AND user_id = ?"
-    ).bind(uuid, payload.user_id).all();
+    ).bind(uuid, payload.sub).all();
     if (!results.length) {
       return new Response(JSON.stringify({ success: false, error: "Not found" }), { status: 404, headers: { "Content-Type": "application/json" } });
     }

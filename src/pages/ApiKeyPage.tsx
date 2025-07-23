@@ -1,20 +1,22 @@
 import React, { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthContext } from "../hooks/AuthContext";
+import { useAuth0 } from "@auth0/auth0-react";
 import { ApiKeyManager } from "../components/ApiKeyManager";
 import { Button } from "../components/ui/button";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 
 export default function ApiKeyPage() {
-  const { user, logout } = useAuthContext();
+  const { user, logout, isAuthenticated, isLoading } = useAuth0();
   const navigate = useNavigate();
   useEffect(() => {
     if (!user) {
       navigate("/login");
     }
   }, [user, navigate]);
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>未認証</div>;
   const handleLogout = async () => {
-    await logout();
+    await logout({ logoutParams: { returnTo: window.location.origin } });
     navigate("/login");
   };
   return (

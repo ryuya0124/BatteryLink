@@ -1,17 +1,27 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
-import { AuthProvider } from "./hooks/AuthContext";
+import { Auth0Provider } from "@auth0/auth0-react";
 import AppRouter from "./AppRouter";
 import "./index.css";
 
+const domain = "batterylink.jp.auth0.com";
+const clientId = "lbQuKpy1dppA0FAQBxYCqBEjJZCfJMSH";
+
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter>
-      <AuthProvider>
+    <Auth0Provider
+      domain={domain}
+      clientId={clientId}
+      authorizationParams={{
+        redirect_uri: window.location.origin,
+        audience: "https://batterylink.ryuya1adgjmptw.workers.dev/"
+      }}
+    >
+      <BrowserRouter>
         <AppRouter />
-      </AuthProvider>
-    </BrowserRouter>
+      </BrowserRouter>
+    </Auth0Provider>
   </React.StrictMode>
 );
 

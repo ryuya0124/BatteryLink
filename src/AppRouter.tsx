@@ -6,19 +6,21 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuthErrorPage from "./pages/AuthErrorPage";
-import { useAuthContext } from "./hooks/AuthContext";
+import { useAuth0 } from "@auth0/auth0-react";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, authLoading } = useAuthContext();
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (!user) return <Navigate to="/login" replace />;
+  const { isAuthenticated, isLoading } = useAuth0();
+  console.log('RequireAuth:', { isAuthenticated, isLoading });
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
 
 function RequireNoAuth({ children }: { children: React.ReactNode }) {
-  const { user, authLoading } = useAuthContext();
-  if (authLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
-  if (user) return <Navigate to="/" replace />;
+  const { isAuthenticated, isLoading } = useAuth0();
+  console.log('RequireNoAuth:', { isAuthenticated, isLoading });
+  if (isLoading) return <div className="min-h-screen flex items-center justify-center">Loading...</div>;
+  if (isAuthenticated) return <Navigate to="/" replace />;
   return <>{children}</>;
 }
 

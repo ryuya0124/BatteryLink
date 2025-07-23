@@ -74,19 +74,20 @@ export const phoneModels = {
   ],
 }
 
-// JWT自動リフレッシュ付きfetchラッパー（Cookieベース認証）
-export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
-  init.credentials = "include"; // Cookieを常に送信
-  let res = await fetch(input, init);
-  if (res.status === 401) {
-    const refreshRes = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
-    if (refreshRes.ok) {
-      // JWTはCookieで自動管理されるので、何も保存しない
-      res = await fetch(input, init);
-    } else {
-      window.location.href = "/login";
-      return res;
-    }
-  }
-  return res;
+// fetchWithAuth: Auth0のgetAccessTokenSilentlyでトークンを取得しAuthorizationヘッダを付与する形に共通化
+export async function fetchWithAuth(
+  input: RequestInfo,
+  init: RequestInit = {},
+  getAccessTokenSilently: (opts?: any) => Promise<string>
+) {
+  const token = await getAccessTokenSilently({
+    audience: import.meta.env.VITE_AUTH0_AUDIENCE,
+  });
+  return fetch(input, {
+    ...init,
+    headers: {
+      ...(init.headers || {}),
+      Authorization: `Bearer ${token}`,
+    },
+  });
 }

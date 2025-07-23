@@ -34,3 +34,4 @@ cert/public.pem
 wrangler.toml
 cert/ed25519-private.pem
 cert/ed25519-public.pem
+.env

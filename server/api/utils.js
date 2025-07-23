@@ -1,4 +1,10 @@
 // server/api/utils.js
+import { jwtVerify, createRemoteJWKSet } from 'jose';
+
+const AUTH0_DOMAIN = 'batterylink.jp.auth0.com'; // 例: dev-xxxxxx.us.auth0.com
+const AUTH0_AUDIENCE = 'https://batterylink.ryuya1adgjmptw.workers.dev/';
+const JWKS = createRemoteJWKSet(new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`));
+
 export function randomOpaqueToken() {
     const arr = new Uint8Array(32);
     crypto.getRandomValues(arr);
@@ -37,4 +43,12 @@ export async function verifyApiKeyAndUuid(request, env, uuid) {
     return { ok: false, status: 403, message: "UUIDが不正です" };
   }
   return { ok: true, userId, device: deviceResults[0] };
+}
+
+export async function verifyAuth0JWT(token) {
+  const { payload } = await jwtVerify(token, JWKS, {
+    issuer: `https://${AUTH0_DOMAIN}/`,
+    audience: AUTH0_AUDIENCE,
+  });
+  return payload;
 }

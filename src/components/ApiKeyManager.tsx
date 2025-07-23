@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { fetchWithAuth } from "@/lib/utils";
+import { useAuth0 } from "@auth0/auth0-react";
 
 interface ApiKeyInfo {
   id: string;
@@ -10,6 +11,7 @@ interface ApiKeyInfo {
 }
 
 export const ApiKeyManager: React.FC = () => {
+  const { getAccessTokenSilently } = useAuth0();
   const [apiKeys, setApiKeys] = useState<ApiKeyInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [newKey, setNewKey] = useState<string | null>(null);
@@ -21,7 +23,7 @@ export const ApiKeyManager: React.FC = () => {
   const fetchApiKeys = async () => {
     setLoading(true);
     setError(null);
-    const res = await fetchWithAuth("/api/api-keys");
+    const res = await fetchWithAuth("/api/api-keys", {}, getAccessTokenSilently);
     if (res && res.ok) {
       setApiKeys(await res.json());
     } else {
@@ -37,7 +39,7 @@ export const ApiKeyManager: React.FC = () => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ label: labelInput }),
-    });
+    }, getAccessTokenSilently);
     if (res && res.ok) {
       const data = await res.json();
       setNewKey(data.apiKey);
@@ -52,7 +54,7 @@ export const ApiKeyManager: React.FC = () => {
     setError(null);
     const res = await fetchWithAuth(`/api/api-keys/${encodeURIComponent(id)}`, {
       method: "DELETE",
-    });
+    }, getAccessTokenSilently);
     if (res && res.ok) {
       fetchApiKeys();
     } else {
@@ -71,7 +73,7 @@ export const ApiKeyManager: React.FC = () => {
       method: "PATCH",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ label: editLabel }),
-    });
+    }, getAccessTokenSilently);
     if (res && res.ok) {
       setEditingId(null);
       setEditLabel("");

@@ -12,7 +12,6 @@ export interface Device {
   model_number: string
   battery_level: number
   last_updated: string
-  user_id: string
   is_charging?: boolean
   temperature?: number
   voltage?: string

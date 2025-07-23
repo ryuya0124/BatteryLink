@@ -1,35 +1,13 @@
-import { handleLogin, handleRefresh, handleLogout, handleSignup } from "./authHandlers.js";
 import { verifyApiKeyAndUuid } from "./utils.js";
 import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice } from "./handlers/deviceHandlers.js";
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
-import { handleMe } from "./handlers/meHandler.js";
+import { handleMe, handleAutoUpdate } from "./handlers/meHandler.js";
 
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     const { pathname } = url;
 
-    if (pathname === "/api/auth/login" && request.method === "POST") {
-      return handleLogin(request, env);
-    }
-    if (pathname === "/api/auth/refresh") {
-      if (request.method !== "POST") {
-        return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
-      }
-      return handleRefresh(request, env);
-    }
-    if (pathname === "/api/auth/logout" && request.method === "POST") {
-      return handleLogout(request, env);
-    }
-    if (pathname === "/api/auth/signup" && request.method === "POST") {
-      return handleSignup(request, env);
-    }
-    if (pathname === "/api/auth/me" && request.method === "GET") {
-      return handleMe(request, env);
-    }
-    if (pathname === "/api/auth/me" && request.method === "PATCH") {
-      return handleMe(request, env);
-    }
     // デバイスAPI
     if (pathname === "/api/devices" && request.method === "GET") {
       return handleGetDevices(request, env);
@@ -66,6 +44,14 @@ export default {
     if (pathname.startsWith("/api/api-keys/") && request.method === "PATCH") {
       const id = decodeURIComponent(pathname.split("/api/api-keys/")[1]);
       return handlePatchApiKey(request, env, id);
+    }
+    // auto_update取得API
+    if (pathname === "/api/auth/me" && request.method === "GET") {
+      return handleMe(request, env);
+    }
+    // auto_update更新API
+    if (pathname === "/api/auth/auto-update" && request.method === "PATCH") {
+      return handleAutoUpdate(request, env);
     }
     // ...他API
     if (pathname.startsWith("/api/")) {

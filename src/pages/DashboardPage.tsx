@@ -1,30 +1,28 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { useAuthContext } from "../hooks/AuthContext";
+import { useAuth0 } from "@auth0/auth0-react";
 import { useDevices } from "../hooks/useDevices";
 import { Button } from "../components/ui/button";
 import { DeviceCard } from "../components/DeviceCard";
 import { AddDeviceDialog } from "../components/AddDeviceDialog";
 import { DeviceStats } from "../components/DeviceStats";
 import { DeviceFilterSort } from "../components/DeviceFilterSort";
-import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneModels } from "../lib/utils";
+import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneModels, fetchWithAuth } from "../lib/utils";
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 import type { Device } from "../types";
 
 export default function DashboardPage() {
-  const { user, token, login, logout, setAutoUpdate } = useAuthContext();
+  const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [showAddDevice, setShowAddDevice] = useState(false);
-  const autoUpdateEnabled = !!user?.auto_update;
-  const setAutoUpdateEnabled = (enabled: boolean) => {
-    setAutoUpdate(enabled);
-  };
+  const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(false);
   const navigate = useNavigate();
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(user);
+  const appUser = user ? { id: user.sub, email: user.email } : null;
+  const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(appUser);
 
   const [sortBy, setSortBy] = useState<"name" | "battery" | "brand" | "updated">("updated");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -44,6 +42,17 @@ export default function DashboardPage() {
       fetchDevices();
     }
   }, [user]);
+
+  useEffect(() => {
+    const fetchUserSettings = async () => {
+      const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
+      if (res.ok) {
+        const data = await res.json();
+        setAutoUpdateEnabled(!!data.auto_update);
+      }
+    };
+    if (isAuthenticated) fetchUserSettings();
+  }, [isAuthenticated, getAccessTokenSilently]);
 
   useEffect(() => {
     if (!autoUpdateEnabled || devices.length === 0) return;
@@ -102,7 +111,6 @@ export default function DashboardPage() {
       model: deviceModel,
       model_number: deviceModelNumber,
       battery_level: batteryLevel,
-      user_id: user.id,
       last_updated: new Date().toISOString(),
       auto_update: undefined, // 送らない
       is_charging: false,
@@ -181,6 +189,26 @@ export default function DashboardPage() {
     }
   }, [deviceBrand, deviceModel]);
 
+  const handleAutoUpdateChange = async (enabled: boolean) => {
+    const res = await fetchWithAuth(
+      "/api/auth/auto-update",
+      {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auto_update: enabled }),
+      },
+      getAccessTokenSilently
+    );
+    if (res.ok) {
+      setAutoUpdateEnabled(enabled);
+    } else {
+      alert("自動更新の変更に失敗しました");
+    }
+  };
+
+  if (isLoading) return <div>Loading...</div>;
+  if (!isAuthenticated) return <div>未認証</div>;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-8">
@@ -196,16 +224,17 @@ export default function DashboardPage() {
               <UserIcon className="h-4 w-4" />
               {user?.email}
             </div>
-            <Button variant="outline" onClick={() => navigate("/apikeys")}>APIキー管理</Button>
-            <Button variant="outline" onClick={async () => { await logout(); navigate("/login"); }}>
+            <Button variant="outline" onClick={() => navigate("/apikeys")}>
+              APIキー管理
+            </Button>
+            <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
               <LogOut className="h-4 w-4 mr-2" />
-              ログアウト
             </Button>
           </div>
         </div>
         <AutoUpdateControl
           autoUpdateEnabled={autoUpdateEnabled}
-          setAutoUpdateEnabled={setAutoUpdateEnabled}
+          setAutoUpdateEnabled={handleAutoUpdateChange}
           onManualUpdate={updateAllDevicesBattery}
           devicesCount={devices.length}
         />
