@@ -13,6 +13,8 @@ import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 import type { Device } from "../types";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
+import { useDelayedLoader } from "@/hooks/useDelayedLoader";
+import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -21,9 +23,11 @@ export default function DashboardPage() {
   const navigate = useNavigate();
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
+  const [autoUpdateLoading, setAutoUpdateLoading] = useState(true);
   const appUser = user ? { id: user.sub, email: user.email } : null;
   const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(appUser);
+  const { authLoadingShown } = useAuthLoading();
+  const showLoader = useDelayedLoader(isLoading || loading || autoUpdateLoading, authLoadingShown ? 200 : 50);
 
   const [sortBy, setSortBy] = useState<"name" | "battery" | "brand" | "updated">("updated");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -46,13 +50,16 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const fetchUserSettings = async () => {
+      setAutoUpdateLoading(true);
       const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
       if (res.ok) {
         const data = await res.json();
         setAutoUpdateEnabled(!!data.auto_update);
       }
+      setAutoUpdateLoading(false);
     };
     if (isAuthenticated) fetchUserSettings();
+    else setAutoUpdateLoading(false);
   }, [isAuthenticated, getAccessTokenSilently]);
 
   useEffect(() => {
@@ -207,7 +214,10 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading || loading) return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
+  if (authLoadingShown && (isLoading || loading || autoUpdateLoading)) {
+    return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
+  }
+  if (showLoader) return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (

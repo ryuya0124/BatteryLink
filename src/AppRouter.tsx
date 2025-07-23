@@ -9,11 +9,15 @@ import AuthErrorPage from "./pages/AuthErrorPage";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AccountPage } from "@/pages/AccountPage";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
+import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth0();
-  console.log('RequireAuth:', { isAuthenticated, isLoading });
-  if (isLoading) return <FullScreenLoader label="認証情報を確認中..." />;
+  const { setAuthLoadingShown } = useAuthLoading();
+  if (isLoading) {
+    setAuthLoadingShown(true);
+    return <FullScreenLoader label="認証情報を確認中..." />;
+  }
   if (!isAuthenticated) return <Navigate to="/login" replace />;
   return <>{children}</>;
 }
