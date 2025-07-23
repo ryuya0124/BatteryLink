@@ -72,7 +72,7 @@ export default function DashboardPage() {
 
   const fetchBatteryInfo = async (deviceUuid: string) => {
     try {
-      const response = await fetch(`/api/battery/${deviceUuid}`);
+      const response = await fetchWithAuth(`/api/battery/${deviceUuid}`, {}, getAccessTokenSilently);
       return await response.json();
     } catch (error) {
       return { success: false, error: "Network error" };
