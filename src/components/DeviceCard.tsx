@@ -1,8 +1,10 @@
+"use client"
+
 import React from "react"
 import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { Zap, Thermometer, RefreshCw, Trash2, MoreVertical, Battery, Smartphone } from "lucide-react"
+import { Zap, Thermometer, RefreshCw, Trash2, Pencil, Battery, Smartphone } from "lucide-react"
 import type { Device } from "@/types"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { DeviceEditDialog } from "@/components/DeviceEditDialog"
@@ -75,23 +77,16 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             </div>
           </div>
 
-          {/* メニューボタン */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-100">
-                <MoreVertical className="w-4 h-4" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-40">
-              <DropdownMenuItem onClick={() => setEditOpen(true)}>編集</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onUpdate(device.uuid)} disabled={updating}>
-                更新
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onDelete(device.uuid)} className="text-red-600 focus:text-red-600">
-                削除
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+          {/* メニューボタン → 編集ボタンに変更 */}
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 px-2 py-0 flex items-center gap-1 hover:bg-gray-100"
+            onClick={() => setEditOpen(true)}
+          >
+            <Pencil className="w-4 h-4" />
+            編集
+          </Button>
         </div>
       </CardHeader>
 
@@ -115,10 +110,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           {typeof device.battery_level === "number" ? (
             <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className={`h-full ${getProgressBarClass(device.battery_level, device.is_charging || false)}`}
+                className={`h-full ${getProgressBarClass(device.battery_level, device.is_charging === true)}`}
                 style={{ width: `${device.battery_level}%` }}
               >
-                {device.is_charging && (
+                {device.is_charging === true && (
                   <div className="absolute inset-0 flex items-center justify-center">
                     <div className="flex space-x-1">
                       {Array.from({ length: Math.ceil(device.battery_level / 20) }).map((_, i) => (
@@ -138,7 +133,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
         {/* ステータスバッジ */}
         <div className="flex flex-wrap gap-2 mb-4">
-          {device.is_charging && (
+          {device.is_charging === true && (
             <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
               <Zap className="w-3 h-3 mr-1" />
               充電中
@@ -146,7 +141,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           )}
 
           {/* バッテリー残量警告バッジ */}
-          {typeof device.battery_level === "number" && device.battery_level <= 15 && !device.is_charging && (
+          {typeof device.battery_level === "number" && device.battery_level <= 15 && device.is_charging !== true && (
             <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
               <Battery className="w-3 h-3 mr-1" />
               残量少
@@ -197,10 +192,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             {updating ? "更新中..." : "更新"}
           </Button>
           <Button
-            variant="outline"
+            variant="destructive"
             size="sm"
             onClick={() => onDelete(device.uuid)}
-            className="bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-700"
+            className="hover:bg-red-600 hover:border-red-600"
           >
             <Trash2 className="w-4 h-4 mr-1" />
             削除

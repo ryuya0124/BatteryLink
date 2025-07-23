@@ -15,7 +15,10 @@ export function useDevices(user: AppUser | null) {
     const res = await fetchWithAuth("/api/devices", { cache: "no-store" }, getAccessTokenSilently)
     if (res && res.ok) {
       const data = await res.json()
-      setDevices(data)
+      setDevices(data.map((d: any) => ({
+        ...d,
+        is_charging: Boolean(d.is_charging)
+      })))
     }
     setLoading(false)
   }, [getAccessTokenSilently])
@@ -36,14 +39,16 @@ export function useDevices(user: AppUser | null) {
 
   // デバイス更新
   const updateDevice = useCallback(async (uuid: string, updateData: Partial<Device>) => {
-    setUpdatingDevices((prev) => new Set(prev).add(uuid))
+    setUpdatingDevices((prev) => new Set(prev).add(uuid));
+    // 実際の更新処理（APIリクエストが必要ならここで）
+    // await fetchWithAuth(...)
+    await fetchDevices();
     setUpdatingDevices((prev) => {
-      const newSet = new Set(prev)
-      newSet.delete(uuid)
-      return newSet
-    })
-    await fetchDevices()
-  }, [fetchDevices])
+      const newSet = new Set(prev);
+      newSet.delete(uuid);
+      return newSet;
+    });
+  }, [fetchDevices]);
 
   // デバイス削除
   const deleteDevice = useCallback(async (uuid: string) => {
@@ -53,5 +58,5 @@ export function useDevices(user: AppUser | null) {
     await fetchDevices()
   }, [fetchDevices, getAccessTokenSilently])
 
-  return { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices }
+  return { devices, loading, updatingDevices, setUpdatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices }
 }

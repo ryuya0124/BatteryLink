@@ -24,10 +24,12 @@ export default function DashboardPage() {
   const [showApiKeyManager, setShowApiKeyManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoUpdateLoading, setAutoUpdateLoading] = useState(true);
+  const [manualRefresh, setManualRefresh] = useState(false);
   const appUser = user ? { id: user.sub, email: user.email } : null;
-  const { devices, loading, updatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(appUser);
+  const { devices, loading, updatingDevices, setUpdatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(appUser);
   const { authLoadingShown } = useAuthLoading();
-  const showLoader = useDelayedLoader(isLoading || loading || autoUpdateLoading, authLoadingShown ? 200 : 50);
+  const isGlobalLoading = (isLoading || loading || autoUpdateLoading) && updatingDevices.size === 0 && !manualRefresh;
+  const showLoader = useDelayedLoader(isGlobalLoading, authLoadingShown ? 200 : 50);
 
   const [sortBy, setSortBy] = useState<"name" | "battery" | "brand" | "updated">("updated");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -41,6 +43,8 @@ export default function DashboardPage() {
   const [deviceModelNumber, setDeviceModelNumber] = useState("");
   const [batteryLevel, setBatteryLevel] = useState<number | undefined>(undefined);
   const [selectedModelInfo, setSelectedModelInfo] = useState<any>(null);
+
+  const MIN_SPIN_DURATION = 500; // ms
 
   useEffect(() => {
     if (user) {
@@ -141,13 +145,25 @@ export default function DashboardPage() {
     }
   };
 
-  const handleUpdateDevice = async (uuid: string, updateData: Partial<Device>) => {
+  // カード内の更新ボタンは個別バッテリー情報更新
+  const handleUpdateDevice = async (uuid: string) => {
     setError(null);
+    setUpdatingDevices((prev) => new Set(prev).add(uuid));
+    const start = Date.now();
     try {
-      await updateDevice(uuid, updateData);
+      await updateDeviceBattery(uuid);
     } catch (err: any) {
       setError("デバイス更新に失敗しました: " + (err?.message || "不明なエラー"));
     }
+    const elapsed = Date.now() - start;
+    if (elapsed < MIN_SPIN_DURATION) {
+      await new Promise(res => setTimeout(res, MIN_SPIN_DURATION - elapsed));
+    }
+    setUpdatingDevices((prev) => {
+      const newSet = new Set(prev);
+      newSet.delete(uuid);
+      return newSet;
+    });
   };
 
   const handleDeleteDevice = async (uuid: string) => {
@@ -214,7 +230,18 @@ export default function DashboardPage() {
     }
   };
 
-  if (authLoadingShown && (isLoading || loading || autoUpdateLoading)) {
+  const handleManualRefresh = async () => {
+    setManualRefresh(true);
+    const start = Date.now();
+    await fetchDevices();
+    const elapsed = Date.now() - start;
+    if (elapsed < MIN_SPIN_DURATION) {
+      await new Promise(res => setTimeout(res, MIN_SPIN_DURATION - elapsed));
+    }
+    setManualRefresh(false);
+  };
+
+  if (authLoadingShown && isGlobalLoading) {
     return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
   }
   if (showLoader) return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
@@ -241,8 +268,9 @@ export default function DashboardPage() {
         <AutoUpdateControl
           autoUpdateEnabled={autoUpdateEnabled}
           setAutoUpdateEnabled={handleAutoUpdateChange}
-          onManualUpdate={updateAllDevicesBattery}
+          onManualUpdate={handleManualRefresh}
           devicesCount={devices.length}
+          manualRefresh={manualRefresh}
         />
         <DeviceStats devices={devices} />
         <DeviceFilterSort
@@ -278,7 +306,7 @@ export default function DashboardPage() {
             <DeviceCard
               key={device.uuid}
               device={device}
-              onUpdate={(uuid) => handleUpdateDevice(uuid, {/* 必要な更新データ */})}
+              onUpdate={handleUpdateDevice}
               onDelete={handleDeleteDevice}
               updating={updatingDevices.has(device.uuid)}
               getBatteryColor={getBatteryColor}

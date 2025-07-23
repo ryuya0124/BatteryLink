@@ -10,6 +10,7 @@ interface AutoUpdateControlProps {
   setAutoUpdateEnabled: (v: boolean) => void
   onManualUpdate: () => void
   devicesCount: number
+  manualRefresh?: boolean
 }
 
 export const AutoUpdateControl: React.FC<AutoUpdateControlProps> = ({
@@ -17,6 +18,7 @@ export const AutoUpdateControl: React.FC<AutoUpdateControlProps> = ({
   setAutoUpdateEnabled,
   onManualUpdate,
   devicesCount,
+  manualRefresh,
 }) => (
   <Card className="mb-6">
     <CardContent className="pt-6">
@@ -33,7 +35,7 @@ export const AutoUpdateControl: React.FC<AutoUpdateControlProps> = ({
         <div className="flex items-center gap-4">
           <Switch id="auto-update" checked={autoUpdateEnabled} onCheckedChange={setAutoUpdateEnabled} />
           <Button variant="outline" size="sm" onClick={onManualUpdate} disabled={devicesCount === 0}>
-            <RefreshCw className="h-4 w-4 mr-2" />
+            <RefreshCw className={`h-4 w-4 mr-2 ${manualRefresh ? "animate-spin" : ""}`} />
             手動更新
           </Button>
         </div>

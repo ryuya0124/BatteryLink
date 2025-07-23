@@ -115,4 +115,4 @@ export const AddDeviceDialog: React.FC<AddDeviceDialogProps> = ({
       </form>
     </DialogContent>
   </Dialog>
-) 
+)
