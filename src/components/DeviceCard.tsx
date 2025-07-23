@@ -1,12 +1,11 @@
 import React from "react"
-import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card"
+import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
-import { Zap, Thermometer, RefreshCw, Trash2, MoreVertical, Copy } from "lucide-react"
+import { Zap, Thermometer, RefreshCw, Trash2, MoreVertical, Battery, Smartphone } from "lucide-react"
 import type { Device } from "@/types"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { DeviceEditDialog } from "./DeviceEditDialog";
+import { DeviceEditDialog } from "@/components/DeviceEditDialog"
 
 interface DeviceCardProps {
   device: Device
@@ -27,84 +26,242 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   getBatteryCapacityColor,
   getBatteryCapacityBg,
 }) => {
-  const [editOpen, setEditOpen] = React.useState(false);
+  const [editOpen, setEditOpen] = React.useState(false)
+
+  // バッテリーレベルに応じたプログレスバーのクラスを取得
+  const getProgressBarClass = (level: number, isCharging: boolean) => {
+    if (isCharging) {
+      return "charging-progress"
+    } else if (level <= 15) {
+      return "critical-battery"
+    } else if (level <= 30) {
+      return "low-battery"
+    } else if (level <= 60) {
+      return "medium-battery"
+    } else {
+      return "high-battery"
+    }
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <div>
-            <CardTitle className="text-lg font-semibold">
-              {device.name || <span className="text-gray-400">(未登録)</span>}
-            </CardTitle>
-            <div className="mt-1">
-              <div className="text-sm text-gray-500">
-                {(device.brand || device.model) ? `${device.brand || "-"} ${device.model || "-"}` : <span className="text-gray-400">(未登録)</span>}
-              </div>
-              <div className="text-xs text-gray-400">
-                {device.os_version || <span className="text-gray-400">未登録</span>}
-                {(device.os_version && device.model_number) ? " • " : ""}
-                {device.model_number || (device.os_version ? <span className="text-gray-400">-</span> : <span className="text-gray-400">未登録</span>)}
+    <Card className="hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/80 backdrop-blur-sm">
+      <CardHeader className="pb-3">
+        <div className="flex items-start justify-between">
+          <div className="flex items-start gap-3 flex-1">
+            {/* デバイスアイコン */}
+            <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
+              <Smartphone className="w-5 h-5 text-blue-600" />
+            </div>
+
+            {/* デバイス情報 */}
+            <div className="flex-1 min-w-0">
+              <CardTitle className="text-lg font-semibold text-gray-900 truncate">
+                {device.name || <span className="text-gray-400 italic">未登録デバイス</span>}
+              </CardTitle>
+              <div className="mt-1 space-y-1">
+                <div className="text-sm text-gray-600 truncate">
+                  {device.brand || device.model ? (
+                    `${device.brand || "不明"} ${device.model || ""}`.trim()
+                  ) : (
+                    <span className="text-gray-400 italic">ブランド・モデル未登録</span>
+                  )}
+                </div>
+                {(device.os_version || device.model_number) && (
+                  <div className="text-xs text-gray-500 truncate">
+                    {[device.os_version, device.model_number].filter(Boolean).join(" • ") || "詳細情報なし"}
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="flex gap-2 items-start">
-            {/* 3点ボタンでDeviceEditDialogを開く */}
-            <button className="p-1 rounded hover:bg-gray-100" onClick={() => setEditOpen(true)}>
-              <MoreVertical className="w-5 h-5" />
-            </button>
-            {device.is_charging && (
-              <Badge variant="outline" className="text-green-600 border-green-400">
-                <Zap className="h-4 w-4 mr-1 inline" />充電中
-              </Badge>
-            )}
-            {(device.temperature !== undefined && device.temperature !== null && device.temperature !== 0) ? (
-              <Badge variant="outline" className="text-orange-600 border-orange-400">
-                <Thermometer className="h-4 w-4 mr-1 inline" />{device.temperature}℃
-              </Badge>
-            ) : (
-              <Badge variant="outline" className="text-gray-400 border-gray-300">
-                <Thermometer className="h-4 w-4 mr-1 inline" />未登録
-              </Badge>
-            )}
-          </div>
+
+          {/* メニューボタン */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 hover:bg-gray-100">
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-40">
+              <DropdownMenuItem onClick={() => setEditOpen(true)}>編集</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onUpdate(device.uuid)} disabled={updating}>
+                更新
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onDelete(device.uuid)} className="text-red-600 focus:text-red-600">
+                削除
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="flex items-center gap-4 mb-2">
+
+      <CardContent className="pt-0">
+        {/* バッテリーレベル */}
+        <div className="mb-4">
+          <div className="flex items-center justify-between mb-2">
+            <div className="flex items-center gap-2">
+              <Battery className="w-4 h-4 text-gray-500" />
+              <span className="text-sm font-medium text-gray-700">バッテリー</span>
+            </div>
+            {typeof device.battery_level === "number" ? (
+              <span className={`font-bold text-lg ${getBatteryColor(device.battery_level)}`}>
+                {device.battery_level}%
+              </span>
+            ) : (
+              <span className="text-gray-400 text-sm">未登録</span>
+            )}
+          </div>
+
           {typeof device.battery_level === "number" ? (
-            <>
-              <Progress value={device.battery_level} className="flex-1 h-3" />
-              <span className={`ml-2 font-bold text-lg ${getBatteryColor(device.battery_level)}`}>{device.battery_level}%</span>
-            </>
-          ) : (
-            <>
-              <div className="flex-1 h-3 bg-gray-200 rounded overflow-hidden relative">
-                <div className="absolute left-0 top-0 h-full w-full bg-gray-400 opacity-40" />
+            <div className="relative h-4 bg-gray-100 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${getProgressBarClass(device.battery_level, device.is_charging || false)}`}
+                style={{ width: `${device.battery_level}%` }}
+              >
+                {device.is_charging && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex space-x-1">
+                      {Array.from({ length: Math.ceil(device.battery_level / 20) }).map((_, i) => (
+                        <Zap key={i} className="w-2 h-2 text-white drop-shadow-sm" />
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
-              <span className="ml-2 text-gray-400">未登録</span>
-            </>
+            </div>
+          ) : (
+            <div className="h-4 bg-gray-100 rounded-full">
+              <div className="h-full bg-gray-300 rounded-full opacity-50" />
+            </div>
           )}
         </div>
-        <div className="text-xs text-gray-500 mt-1">
-          電圧: {device.voltage ? `${device.voltage}V` : <span className="text-gray-400">未登録</span>}
+
+        {/* ステータスバッジ */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          {device.is_charging && (
+            <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+              <Zap className="w-3 h-3 mr-1" />
+              充電中
+            </Badge>
+          )}
+
+          {/* バッテリー残量警告バッジ */}
+          {typeof device.battery_level === "number" && device.battery_level <= 15 && !device.is_charging && (
+            <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+              <Battery className="w-3 h-3 mr-1" />
+              残量少
+            </Badge>
+          )}
+
+          <Badge
+            variant="secondary"
+            className={
+              device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+                ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
+                : "bg-gray-50 text-gray-500 border-gray-200"
+            }
+          >
+            <Thermometer className="w-3 h-3 mr-1" />
+            {device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+              ? `${device.temperature}℃`
+              : "温度未登録"}
+          </Badge>
         </div>
-        <div className="flex gap-2 mt-4">
-          <Button variant="outline" size="sm" onClick={() => onUpdate(device.uuid)} disabled={updating}>
-            <RefreshCw className={`h-4 w-4 mr-1 ${updating ? "animate-spin" : ""}`} />
-            更新
+
+        {/* 詳細情報 */}
+        <div className="space-y-1 mb-4">
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500">電圧</span>
+            <span className={device.voltage ? "text-gray-700" : "text-gray-400"}>
+              {device.voltage ? `${device.voltage}V` : "未登録"}
+            </span>
+          </div>
+          <div className="flex justify-between text-xs">
+            <span className="text-gray-500">最終更新</span>
+            <span className="text-gray-700">
+              {device.last_updated ? new Date(device.last_updated).toLocaleString("ja-JP") : "未更新"}
+            </span>
+          </div>
+        </div>
+
+        {/* アクションボタン */}
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onUpdate(device.uuid)}
+            disabled={updating}
+            className="flex-1 hover:bg-blue-50 hover:border-blue-300"
+          >
+            <RefreshCw className={`w-4 h-4 mr-2 ${updating ? "animate-spin" : ""}`} />
+            {updating ? "更新中..." : "更新"}
           </Button>
-          <Button variant="destructive" size="sm" onClick={() => onDelete(device.uuid)}>
-            <Trash2 className="h-4 w-4 mr-1" />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(device.uuid)}
+            className="bg-red-50 border-red-200 text-red-600 hover:bg-red-100 hover:border-red-300 hover:text-red-700"
+          >
+            <Trash2 className="w-4 h-4 mr-1" />
             削除
           </Button>
         </div>
       </CardContent>
+
       <DeviceEditDialog
         device={device}
         open={editOpen}
         onOpenChange={setEditOpen}
-        onSave={(update) => { alert("保存: " + JSON.stringify(update)); setEditOpen(false); }}
+        onSave={(update) => {
+          alert("保存: " + JSON.stringify(update))
+          setEditOpen(false)
+        }}
       />
+
+      <style>{`
+        /* 充電中 - 緑色のアニメーション */
+        .charging-progress {
+          background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
+          background-size: 200% 100%;
+          animation: charging-flow 2s ease-in-out infinite;
+          position: relative;
+        }
+
+        /* 危険レベル (0-15%) - 赤色のパルス */
+        .critical-battery {
+          background: #ef4444;
+          animation: critical-pulse 1.5s ease-in-out infinite;
+        }
+
+        /* 低レベル (16-30%) - オレンジ色 */
+        .low-battery {
+          background: #f97316;
+        }
+
+        /* 中レベル (31-60%) - 黄色 */
+        .medium-battery {
+          background: #eab308;
+        }
+
+        /* 高レベル (61-100%) - 青色 */
+        .high-battery {
+          background: #3b82f6;
+        }
+
+        @keyframes charging-flow {
+          0% { background-position: 200% 0; }
+          100% { background-position: -200% 0; }
+        }
+
+        @keyframes critical-pulse {
+          0%, 100% { 
+            opacity: 1; 
+          }
+          50% { 
+            opacity: 0.7; 
+          }
+        }
+      `}</style>
     </Card>
-  );
-}; 
+  )
+}
