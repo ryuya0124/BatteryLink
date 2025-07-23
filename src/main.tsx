@@ -17,6 +17,13 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         redirect_uri: window.location.origin,
         audience: "https://batterylink.ryuya1adgjmptw.workers.dev/"
       }}
+      onRedirectCallback={(appState) => {
+        if (appState?.returnTo) {
+          window.location.assign(appState.returnTo);
+        } else {
+          window.location.assign("/");
+        }
+      }}
     >
       <BrowserRouter>
         <AppRouter />

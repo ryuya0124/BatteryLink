@@ -4,6 +4,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { ApiKeyManager } from "../components/ApiKeyManager";
 import { Button } from "../components/ui/button";
 import { Battery, LogOut, UserIcon } from "lucide-react";
+import FullScreenLoader from "@/components/ui/FullScreenLoader";
 
 export default function ApiKeyPage() {
   const { user, logout, isAuthenticated, isLoading } = useAuth0();
@@ -13,7 +14,7 @@ export default function ApiKeyPage() {
       navigate("/login");
     }
   }, [user, navigate]);
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <FullScreenLoader label="APIキー管理ページを読み込み中..." />;
   if (!isAuthenticated) return <div>未認証</div>;
   const handleLogout = async () => {
     await logout({ logoutParams: { returnTo: window.location.origin } });
@@ -28,10 +29,7 @@ export default function ApiKeyPage() {
             <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <UserIcon className="h-4 w-4" />
-              {user?.email}
-            </div>
+            {/* メールアドレス表示を削除 */}
             <Button variant="outline" onClick={() => navigate("/")}>ダッシュボード</Button>
             <Button variant="outline" onClick={handleLogout}>
               <LogOut className="h-4 w-4 mr-2" />

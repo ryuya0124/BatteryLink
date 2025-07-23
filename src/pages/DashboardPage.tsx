@@ -12,6 +12,7 @@ import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
 import type { Device } from "../types";
+import FullScreenLoader from "@/components/ui/FullScreenLoader";
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -206,7 +207,7 @@ export default function DashboardPage() {
     }
   };
 
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading || loading) return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (
@@ -220,13 +221,8 @@ export default function DashboardPage() {
             <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
           </div>
           <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2 text-sm text-gray-600">
-              <UserIcon className="h-4 w-4" />
-              {user?.email}
-            </div>
-            <Button variant="outline" onClick={() => navigate("/apikeys")}>
-              APIキー管理
-            </Button>
+            <Button variant="outline" onClick={() => navigate("/account")}> <UserIcon className="h-4 w-4 mr-1" />アカウント</Button>
+            <Button variant="outline" onClick={() => navigate("/apikeys")}>APIキー管理</Button>
             <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>
               <LogOut className="h-4 w-4 mr-2" />
             </Button>
