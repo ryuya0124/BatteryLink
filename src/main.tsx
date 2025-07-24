@@ -6,8 +6,8 @@ import AppRouter from "./AppRouter";
 import "./index.css";
 import { AuthLoadingProvider } from "@/hooks/AuthLoadingContext";
 
-const domain = "batterylink.jp.auth0.com";
-const clientId = "lbQuKpy1dppA0FAQBxYCqBEjJZCfJMSH";
+const domain = "auth0.batterysync.net";
+const clientId = "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -17,7 +17,7 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
         clientId={clientId}
         authorizationParams={{
           redirect_uri: window.location.origin,
-          audience: "https://batterylink.ryuya1adgjmptw.workers.dev/"
+          audience: "https://batterysync.net/"
         }}
         onRedirectCallback={(appState) => {
           if (appState?.returnTo) {

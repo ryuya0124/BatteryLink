@@ -1,8 +1,8 @@
 // server/api/utils.js
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-const AUTH0_DOMAIN = 'batterylink.jp.auth0.com'; // 例: dev-xxxxxx.us.auth0.com
-const AUTH0_AUDIENCE = 'https://batterylink.ryuya1adgjmptw.workers.dev/';
+const AUTH0_DOMAIN = 'auth0.batterysync.net'; // 例: dev-xxxxxx.us.auth0.com
+const AUTH0_AUDIENCE = 'https://batterysync.net/';
 const JWKS = createRemoteJWKSet(new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`));
 
 export function randomOpaqueToken() {

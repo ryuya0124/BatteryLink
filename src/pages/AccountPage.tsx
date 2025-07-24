@@ -4,7 +4,7 @@ import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 
-const ACCOUNT_LINK_URL = "https://batterylink.jp.auth0.com/account-link-extension"; // ←ここを実際の拡張機能URLに置き換えてください
+const ACCOUNT_LINK_URL = "https://auth0.batterysync.net/account-link-extension";
 
 export const AccountPage: React.FC = () => {
   const { user, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect } = useAuth0();
@@ -49,7 +49,7 @@ export const AccountPage: React.FC = () => {
           </div>
         </div>
         <footer className="mt-16 text-center text-gray-500 text-sm">
-          <p>© 2025 BatteryLink</p>
+          <p>© 2025 BatterySync</p>
         </footer>
       </div>
     </div>

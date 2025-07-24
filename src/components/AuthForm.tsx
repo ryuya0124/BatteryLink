@@ -55,7 +55,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ onAuthSuccess }) => {
         <CardHeader className="text-center">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Battery className="h-8 w-8 text-blue-600" />
-            <CardTitle className="text-2xl">BatteryLink</CardTitle>
+            <CardTitle className="text-2xl">BatterySync</CardTitle>
           </div>
           <CardDescription>スマートフォンのバッテリー残量を管理しましょう</CardDescription>
         </CardHeader>

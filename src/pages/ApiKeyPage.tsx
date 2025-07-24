@@ -28,7 +28,7 @@ export default function ApiKeyPage() {
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-2 sm:gap-0">
           <div className="flex items-center gap-2 justify-center sm:justify-start">
             <Battery className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-gray-900">BatteryLink</h1>
+            <h1 className="text-3xl font-bold text-gray-900">BatterySync</h1>
           </div>
           <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full">
             <Button variant="outline" onClick={() => navigate("/")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">ダッシュボード</Button>
@@ -40,7 +40,7 @@ export default function ApiKeyPage() {
         </div>
         <ApiKeyManager />
         <footer className="mt-16 text-center text-gray-500 text-sm">
-          <p>© 2025 BatteryLink</p>
+          <p>© 2025 BatterySync</p>
         </footer>
       </div>
     </div>

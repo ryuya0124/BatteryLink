@@ -23,7 +23,7 @@ export const Spinner: React.FC<{ label?: string }> = ({ label }) => (
       ></path>
     </svg>
     <span className="text-lg font-semibold text-blue-700 tracking-wide">
-      {label || "BatteryLink"}
+      {label || "BatterySync"}
     </span>
   </div>
 );

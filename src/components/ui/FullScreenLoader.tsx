@@ -72,7 +72,7 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({ label }) => {
           className={`text-center transition-all duration-700 delay-300 ${mounted ? "translate-y-0 opacity-100" : "translate-y-5 opacity-0"}`}
         >
           <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 bg-clip-text text-transparent mb-3 animate-gradient drop-shadow-sm">
-            BatteryLink
+            BatterySync
           </h1>
           <p className="text-gray-600 text-lg font-medium animate-fade">{label || "デバイスを接続中..."}</p>
         </div>

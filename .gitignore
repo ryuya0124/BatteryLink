@@ -27,8 +27,8 @@ dist-ssr
 .wrangler
 .dev.vars*
 .wrangler.toml
-BatteryLink設計書.xlsx
-~$BatteryLink設計書.xlsx
+BatterySync設計書.xlsx
+~$BatterySync設計書.xlsx
 cert/private.pem
 cert/public.pem
 wrangler.toml
