@@ -3,6 +3,7 @@ import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
 import { handleMe, handleAutoUpdate } from "./handlers/meHandler.js";
 import { isApiKeyUpdate, withCORS, handlePreflight } from "./cors.js";
+import { handleAccountLink } from "./handlers/accountLinkHandler.js";
 
 export default {
   async fetch(request, env, ctx) {
@@ -13,6 +14,10 @@ export default {
     // CORSプリフライト対応
     if (request.method === "OPTIONS") {
       return handlePreflight(apiKeyUpdate);
+    }
+
+    if (pathname === "/api/link-account" && request.method === "POST") {
+      return withCORS(await handleAccountLink(request, env), apiKeyUpdate);
     }
 
     // デバイスAPI
