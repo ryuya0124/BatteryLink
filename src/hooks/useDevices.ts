@@ -12,13 +12,19 @@ export function useDevices(user: AppUser | null) {
   // API経由でデバイス一覧取得
   const fetchDevices = useCallback(async () => {
     setLoading(true)
-    const res = await fetchWithAuth("/api/devices", { cache: "no-store" }, getAccessTokenSilently)
-    if (res && res.ok) {
-      const data = await res.json()
-      setDevices(data.map((d: any) => ({
-        ...d,
-        is_charging: Boolean(d.is_charging)
-      })))
+    try {
+      const res = await fetchWithAuth("/api/devices", { cache: "no-store" }, getAccessTokenSilently)
+      if (res && res.ok) {
+        const data = await res.json()
+        setDevices(data.map((d: any) => ({
+          ...d,
+          is_charging: Boolean(d.is_charging)
+        })))
+      } else {
+        setDevices([])
+      }
+    } catch (e) {
+      setDevices([])
     }
     setLoading(false)
   }, [getAccessTokenSilently])

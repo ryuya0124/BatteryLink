@@ -89,18 +89,18 @@ export const ApiKeyManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-xl mx-auto bg-card text-card-foreground rounded shadow p-6 mt-8 transition-colors">
-      <h2 className="text-xl font-bold mb-4 text-foreground">APIキー管理</h2>
+    <div className="max-w-xl w-full mx-auto bg-card text-card-foreground rounded shadow p-4 sm:p-6 mt-4 sm:mt-8 transition-colors">
+      <h2 className="text-lg sm:text-xl font-bold mb-4 text-foreground">APIキー管理</h2>
       {error && <div className="text-red-500 mb-2">{error}</div>}
-      <div className="flex gap-2 mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 mb-4 w-full">
         <input
           type="text"
-          className="border rounded px-2 py-1 flex-1 bg-background text-foreground"
+          className="border rounded px-2 sm:px-3 py-1 flex-1 min-w-0 bg-background text-foreground text-base sm:text-lg"
           placeholder="APIキー名（任意）"
           value={labelInput}
           onChange={e => setLabelInput(e.target.value)}
         />
-        <Button onClick={createApiKey}>新しいAPIキーを発行</Button>
+        <Button className="w-full sm:w-auto min-w-0 text-xs sm:text-sm" onClick={createApiKey}>新しいAPIキーを発行</Button>
       </div>
       {newKey && (
         <div className="mb-4">
@@ -110,7 +110,7 @@ export const ApiKeyManager: React.FC = () => {
       )}
       <div className="flex flex-col gap-4">
         {apiKeys.map((key) => (
-          <Card key={key.id} className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between border-0 shadow-md transition-all duration-200">
+          <Card key={key.id} className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between border-0 shadow-md transition-all duration-200 min-w-0">
             <div className="flex-1 min-w-0">
               {editingId === key.id ? (
                 <div className="flex gap-1 mb-2 sm:mb-0">

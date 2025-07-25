@@ -22,21 +22,14 @@ export const AccountPage: React.FC = () => {
   const [identities, setIdentities] = useState<any[]>([]);
   const [claimsDebug, setClaimsDebug] = useState<any>(null);
   const [theme, setTheme] = useThemeMode();
-
-  useEffect(() => {
-    if (!isLoading && !isAuthenticated) {
-      loginWithRedirect({ appState: { returnTo: "/account" } });
-    }
-  }, [isLoading, isAuthenticated, loginWithRedirect]);
-
-  useEffect(() => {
-    (async () => {
-      const claims = await getIdTokenClaims();
-      setClaimsDebug(claims); // デバッグ用
-      setHasLinkCandidate(!!(claims && claims[LINK_CLAIM]));
-      setIdentities((claims && claims[IDENTITIES_CLAIM]) || []);
-    })();
-  }, [getIdTokenClaims]);
+  
+  // 明示的なボタンでアカウント情報再取得
+  const handleManualFetchAccount = async () => {
+    const claims = await getIdTokenClaims();
+    setClaimsDebug(claims);
+    setHasLinkCandidate(!!(claims && claims[LINK_CLAIM]));
+    setIdentities((claims && claims[IDENTITIES_CLAIM]) || []);
+  };
 
   // Googleアカウントがすでにリンク済みか判定
   const isGoogleLinked = identities.some(
@@ -104,15 +97,15 @@ export const AccountPage: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-foreground transition-colors">
-      <div className="container mx-auto px-4 py-8">
+      <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 my-2 sm:my-4 lg:my-8">
         {/* Header（他ページと統一） */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-2 sm:gap-0">
-          <div className="flex items-center gap-2 justify-center sm:justify-start">
-            <Battery className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-foreground drop-shadow">BatterySync</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-8 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 justify-center sm:justify-start min-w-0">
+            <Battery className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow min-w-0 max-w-full flex-shrink-0 truncate">BatterySync</h1>
           </div>
-          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full">
-            <Button variant="outline" onClick={() => navigate("/")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"> <UserIcon className="h-4 w-4 mr-1" />ダッシュボード</Button>
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full min-w-0">
+            <Button variant="outline" onClick={handleManualFetchAccount} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">アカウント情報再取得</Button>
             <Button variant="outline" onClick={() => navigate("/apikeys")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">APIキー管理</Button>
             <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">
               <LogOut className="h-4 w-4 mr-2" />
@@ -242,7 +235,7 @@ export const AccountPage: React.FC = () => {
             </div>
           </div>
         </div>
-        <footer className="mt-16 text-center text-gray-500 text-sm">
+        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full">
           <p>© 2025 BatterySync</p>
         </footer>
       </div>

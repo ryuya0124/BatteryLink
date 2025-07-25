@@ -46,25 +46,35 @@ export default function DashboardPage() {
 
   const MIN_SPIN_DURATION = 500; // ms
 
-  useEffect(() => {
-    if (user) {
-      fetchDevices();
+  // 初回デバイス取得・設定取得は明示的なボタン/イベントで呼ぶ
+  const handleManualFetchDevices = async () => {
+    if (user) await fetchDevices();
+  };
+  const handleManualFetchUserSettings = async () => {
+    setAutoUpdateLoading(true);
+    const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
+    if (res.ok) {
+      const data = await res.json();
+      setAutoUpdateEnabled(!!data.auto_update);
     }
-  }, [user]);
-
-  useEffect(() => {
-    const fetchUserSettings = async () => {
-      setAutoUpdateLoading(true);
-      const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
-      if (res.ok) {
-        const data = await res.json();
-        setAutoUpdateEnabled(!!data.auto_update);
-      }
-      setAutoUpdateLoading(false);
-    };
-    if (isAuthenticated) fetchUserSettings();
-    else setAutoUpdateLoading(false);
-  }, [isAuthenticated, getAccessTokenSilently]);
+    setAutoUpdateLoading(false);
+  };
+  // deviceBrand/deviceModelの副作用はonChangeで直接
+  const handleDeviceBrandChange = (brand: string) => {
+    setDeviceBrand(brand);
+    setDeviceModel("");
+    setDeviceOsVersion("");
+    setDeviceModelNumber("");
+    setSelectedModelInfo(null);
+  };
+  const handleDeviceModelChange = (model: string) => {
+    setDeviceModel(model);
+    const brandModels = phoneModels[deviceBrand as keyof typeof phoneModels];
+    const modelInfo = brandModels?.find((m: any) => m.model === model);
+    setSelectedModelInfo(modelInfo);
+    setDeviceOsVersion("");
+    setDeviceModelNumber("");
+  };
 
   useEffect(() => {
     if (!autoUpdateEnabled || devices.length === 0) return;
@@ -213,6 +223,36 @@ export default function DashboardPage() {
     }
   }, [deviceBrand, deviceModel]);
 
+  // 初回表示時のみ自動fetch（どうしても必要な副作用）
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      fetchDevices();
+    }
+    // eslint-disable-next-line
+  }, [isAuthenticated, user]);
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      fetchUserSettings();
+    } else {
+      setAutoUpdateLoading(false); // 未認証時も必ず解除
+    }
+  }, [isAuthenticated]);
+
+  const fetchUserSettings = async () => {
+    setAutoUpdateLoading(true);
+    try {
+      const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
+      if (res.ok) {
+        const data = await res.json();
+        setAutoUpdateEnabled(!!data.auto_update);
+      }
+    } catch (e) {
+      // エラー時も何もしない
+    }
+    setAutoUpdateLoading(false); // 必ず最後に呼ぶ
+  };
+
   const handleAutoUpdateChange = async (enabled: boolean) => {
     const res = await fetchWithAuth(
       "/api/auth/auto-update",
@@ -248,16 +288,18 @@ export default function DashboardPage() {
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors">
-      <div className="container mx-auto px-4 py-8">
+    <div className="min-h-screen bg-background text-foreground transition-colors px-4 sm:px-8 lg:px-16">
+      <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 my-2 sm:my-4 lg:my-8">
         {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2">{error}</div>}
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-8 gap-2 sm:gap-0">
-          <div className="flex items-center gap-2 justify-center sm:justify-start">
-            <Battery className="h-8 w-8 text-blue-600" />
-            <h1 className="text-3xl font-bold text-foreground drop-shadow">BatterySync</h1>
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-8 gap-2 sm:gap-0">
+          <div className="flex items-center gap-2 justify-center sm:justify-start min-w-0">
+            <Battery className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
+            <h1 className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow min-w-0 max-w-full flex-shrink-0 truncate">BatterySync</h1>
           </div>
-          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full min-w-0">
+            <Button variant="outline" onClick={handleManualFetchDevices} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">デバイス再取得</Button>
+            <Button variant="outline" onClick={handleManualFetchUserSettings} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">設定再取得</Button>
             <Button variant="outline" onClick={() => navigate("/account")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"> <UserIcon className="h-4 w-4 mr-1" />アカウント</Button>
             <Button variant="outline" onClick={() => navigate("/apikeys")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">APIキー管理</Button>
             <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">
@@ -265,70 +307,84 @@ export default function DashboardPage() {
             </Button>
           </div>
         </div>
-        <AutoUpdateControl
-          autoUpdateEnabled={autoUpdateEnabled}
-          setAutoUpdateEnabled={handleAutoUpdateChange}
-          onManualUpdate={handleManualRefresh}
-          devicesCount={devices.length}
-          manualRefresh={manualRefresh}
-        />
-        <DeviceStats devices={devices} />
-        <DeviceFilterSort
-          sortBy={sortBy}
-          setSortBy={setSortBy}
-          sortOrder={sortOrder}
-          setSortOrder={setSortOrder}
-          filterBrand={filterBrand}
-          setFilterBrand={setFilterBrand}
-          filterBattery={filterBattery}
-          setFilterBattery={setFilterBattery}
-          phoneModels={phoneModels}
-        />
-        {/* AddDeviceDialog本体は常にレンダリング */}
-        <AddDeviceDialog
-          open={showAddDevice}
-          onOpenChange={setShowAddDevice}
-          deviceName={deviceName}
-          setDeviceName={setDeviceName}
-          deviceBrand={deviceBrand}
-          setDeviceBrand={setDeviceBrand}
-          deviceModel={deviceModel}
-          setDeviceModel={setDeviceModel}
-          deviceModelNumber={deviceModelNumber}
-          setDeviceModelNumber={setDeviceModelNumber}
-          phoneModels={phoneModels}
-          selectedModelInfo={selectedModelInfo}
-          onSubmit={handleAddDevice}
-        />
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredAndSortedDevices.map((device) => (
-            <DeviceCard
-              key={device.uuid}
-              device={device}
-              onUpdate={handleUpdateDevice}
-              onDelete={handleDeleteDevice}
-              updating={updatingDevices.has(device.uuid)}
-              getBatteryColor={getBatteryColor}
-              getBatteryCapacityColor={getBatteryCapacityColor}
-              getBatteryCapacityBg={getBatteryCapacityBg}
+        {/* 左右分割 */}
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 h-screen overflow-hidden">
+          {/* 左カラム: 固定 */}
+          <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 sticky top-0 h-[calc(100vh-64px)] px-0">
+            <AutoUpdateControl
+              autoUpdateEnabled={autoUpdateEnabled}
+              setAutoUpdateEnabled={handleAutoUpdateChange}
+              onManualUpdate={handleManualRefresh}
+              devicesCount={devices.length}
+              manualRefresh={manualRefresh}
             />
-          ))}
-        </div>
-        {/* デバイスが1つ以上あるとき、リストの下に追加ボタン */}
-        {devices.length > 0 && (
-          <div className="flex justify-center mt-8">
-            <Button variant="default" onClick={() => setShowAddDevice(true)}>
-              デバイスを追加
-            </Button>
+            <DeviceStats devices={devices} />
+            {/* デバイス追加ボタン */}
+            {devices.length > 0 && (
+              <div className="flex justify-center mt-8">
+                <Button variant="default" onClick={() => setShowAddDevice(true)}>
+                  デバイスを追加
+                </Button>
+              </div>
+            )}
           </div>
-        )}
-        {filteredAndSortedDevices.length === 0 && devices.length > 0 && (
-          <NoDevices type="filtered" />
-        )}
-        {filteredAndSortedDevices.length === 0 && devices.length === 0 && (
-          <NoDevices type="empty" onAddDevice={() => setShowAddDevice(true)} />
-        )}
-        <footer className="mt-16 text-center text-gray-500 text-sm">
+          {/* 右カラム: スクロール＋フィルタ上部 */}
+          <div className="w-full lg:w-3/4 flex flex-col h-screen overflow-y-auto px-0" style={{ maxHeight: '100vh' }}>
+            <DeviceFilterSort
+              sortBy={sortBy}
+              setSortBy={setSortBy}
+              sortOrder={sortOrder}
+              setSortOrder={setSortOrder}
+              filterBrand={filterBrand}
+              setFilterBrand={setFilterBrand}
+              filterBattery={filterBattery}
+              setFilterBattery={setFilterBattery}
+              phoneModels={phoneModels}
+            />
+            {/* AddDeviceDialog本体は常にレンダリング */}
+            <AddDeviceDialog
+              open={showAddDevice}
+              onOpenChange={setShowAddDevice}
+              deviceName={deviceName}
+              setDeviceName={setDeviceName}
+              deviceBrand={deviceBrand}
+              setDeviceBrand={handleDeviceBrandChange}
+              deviceModel={deviceModel}
+              setDeviceModel={handleDeviceModelChange}
+              deviceModelNumber={deviceModelNumber}
+              setDeviceModelNumber={setDeviceModelNumber}
+              phoneModels={phoneModels}
+              selectedModelInfo={selectedModelInfo}
+              onSubmit={handleAddDevice}
+            />
+            {/* デバイスカードセクション ラップ */}
+            {/* デバイスカードセクション ラップ */}
+            <div className="w-full px-0">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                {filteredAndSortedDevices.map((device) => (
+                  <div key={device.uuid} className="w-full">
+                    <DeviceCard
+                      device={device}
+                      onUpdate={handleUpdateDevice}
+                      onDelete={handleDeleteDevice}
+                      updating={updatingDevices.has(device.uuid)}
+                      getBatteryColor={getBatteryColor}
+                      getBatteryCapacityColor={getBatteryCapacityColor}
+                      getBatteryCapacityBg={getBatteryCapacityBg}
+                    />
+                  </div>
+                ))}
+              </div>
+            </div>
+            {filteredAndSortedDevices.length === 0 && devices.length > 0 && (
+              <NoDevices type="filtered" />
+            )}
+            {filteredAndSortedDevices.length === 0 && devices.length === 0 && (
+              <NoDevices type="empty" onAddDevice={() => setShowAddDevice(true)} />
+            )}
+          </div>
+        </div>
+        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full">
           <p>© 2025 BatterySync</p>
         </footer>
       </div>
