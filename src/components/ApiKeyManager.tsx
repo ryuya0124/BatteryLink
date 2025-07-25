@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { Button } from "./ui/button";
 import { fetchWithAuth } from "@/lib/utils";
 import { useAuth0 } from "@auth0/auth0-react";
+import { Card } from "@/components/ui/card";
 
 interface ApiKeyInfo {
   id: string;
@@ -88,13 +89,13 @@ export const ApiKeyManager: React.FC = () => {
   }, []);
 
   return (
-    <div className="max-w-xl mx-auto bg-white rounded shadow p-6 mt-8">
-      <h2 className="text-xl font-bold mb-4">APIキー管理</h2>
+    <div className="max-w-xl mx-auto bg-card text-card-foreground rounded shadow p-6 mt-8 transition-colors">
+      <h2 className="text-xl font-bold mb-4 text-foreground">APIキー管理</h2>
       {error && <div className="text-red-500 mb-2">{error}</div>}
       <div className="flex gap-2 mb-4">
         <input
           type="text"
-          className="border rounded px-2 py-1 flex-1"
+          className="border rounded px-2 py-1 flex-1 bg-background text-foreground"
           placeholder="APIキー名（任意）"
           value={labelInput}
           onChange={e => setLabelInput(e.target.value)}
@@ -103,19 +104,19 @@ export const ApiKeyManager: React.FC = () => {
       </div>
       {newKey && (
         <div className="mb-4">
-          <div className="font-mono break-all p-2 bg-gray-100 rounded">{newKey}</div>
-          <div className="text-xs text-gray-500">※この画面でしか表示されません。必ず控えてください。</div>
+          <div className="font-mono break-all p-2 bg-muted text-foreground rounded">{newKey}</div>
+          <div className="text-xs text-muted-foreground">※この画面でしか表示されません。必ず控えてください。</div>
         </div>
       )}
       <div className="flex flex-col gap-4">
         {apiKeys.map((key) => (
-          <div key={key.id} className="border rounded shadow-sm p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between bg-gray-50">
+          <Card key={key.id} className="w-full flex flex-col sm:flex-row sm:items-center sm:justify-between border-0 shadow-md transition-all duration-200">
             <div className="flex-1 min-w-0">
               {editingId === key.id ? (
                 <div className="flex gap-1 mb-2 sm:mb-0">
                   <input
                     type="text"
-                    className="border rounded px-1 py-0.5 flex-1"
+                    className="border rounded px-1 py-0.5 flex-1 bg-background text-foreground"
                     value={editLabel}
                     onChange={e => setEditLabel(e.target.value)}
                     autoFocus
@@ -125,18 +126,18 @@ export const ApiKeyManager: React.FC = () => {
                 </div>
               ) : (
                 <div className="flex gap-2 items-center mb-2 sm:mb-0">
-                  <span className="font-semibold text-lg">{key.label || <span className="text-gray-400">(未設定)</span>}</span>
+                  <span className="font-semibold text-lg">{key.label || <span className="text-muted-foreground">(未設定)</span>}</span>
                   <Button size="sm" variant="outline" onClick={() => startEdit(key.id, key.label || "")}>編集</Button>
                 </div>
               )}
-              <div className="text-xs text-gray-500">
+              <div className="text-xs text-muted-foreground">
                 発行日: {key.created_at ? new Date(key.created_at).toLocaleString() : "-"} ／ 最終使用: {key.last_used_at ? new Date(key.last_used_at).toLocaleString() : "-"}
               </div>
             </div>
             <div className="mt-2 sm:mt-0 sm:ml-4 flex gap-2">
               <Button variant="destructive" size="sm" onClick={() => deleteApiKey(key.id)}>削除</Button>
             </div>
-          </div>
+          </Card>
         ))}
       </div>
     </div>

@@ -5,12 +5,19 @@ import { Auth0Provider } from "@auth0/auth0-react";
 import AppRouter from "./AppRouter";
 import "./index.css";
 import { AuthLoadingProvider } from "@/hooks/AuthLoadingContext";
+import { useThemeMode } from "@/hooks/useThemeMode";
+
+function ThemeModeEffect() {
+  useThemeMode();
+  return null;
+}
 
 const domain = "auth0.batterysync.net";
 const clientId = "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
+    <ThemeModeEffect />
     <AuthLoadingProvider>
       <Auth0Provider
         domain={domain}

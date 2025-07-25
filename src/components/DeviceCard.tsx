@@ -48,30 +48,30 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   }
 
   return (
-    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md bg-white/80 backdrop-blur-sm">
+    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md">
       <CardHeader className="pb-3">
         <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2 sm:gap-0">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* デバイスアイコン */}
-            <div className="p-2 bg-blue-50 rounded-lg border border-blue-100 shrink-0">
-              <Smartphone className="w-5 h-5 text-blue-600" />
+            <div className="p-2 bg-blue-50 dark:bg-blue-900 rounded-lg border border-blue-100 dark:border-blue-900 shrink-0">
+              <Smartphone className="w-5 h-5 text-blue-600 dark:text-blue-300" />
             </div>
 
             {/* デバイス情報 */}
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base sm:text-lg font-semibold text-gray-900 truncate">
-                {device.name || <span className="text-gray-400 italic">未登録デバイス</span>}
+              <CardTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
+                {device.name || <span className="text-muted-foreground italic">未登録デバイス</span>}
               </CardTitle>
               <div className="mt-1 space-y-1">
-                <div className="text-xs sm:text-sm text-gray-600 truncate">
+                <div className="text-xs sm:text-sm text-muted-foreground truncate">
                   {device.brand || device.model ? (
                     `${device.brand || "不明"} ${device.model || ""}`.trim()
                   ) : (
-                    <span className="text-gray-400 italic">ブランド・モデル未登録</span>
+                    <span className="text-muted-foreground italic">ブランド・モデル未登録</span>
                   )}
                 </div>
                 {(device.os_version || device.model_number) && (
-                  <div className="text-xs text-gray-500 truncate">
+                  <div className="text-xs text-muted-foreground truncate">
                     {[device.os_version, device.model_number].filter(Boolean).join(" • ") || "詳細情報なし"}
                   </div>
                 )}
@@ -97,20 +97,18 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         <div className="mb-4">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
-              <Battery className="w-4 h-4 text-gray-500" />
-              <span className="text-xs sm:text-sm font-medium text-gray-700">バッテリー</span>
+              <Battery className="w-4 h-4 text-muted-foreground" />
+              <span className="text-xs sm:text-sm font-medium text-muted-foreground">バッテリー</span>
             </div>
             {typeof device.battery_level === "number" ? (
-              <span className={`font-bold text-base sm:text-lg ${getBatteryColor(device.battery_level)}`}>
-                {device.battery_level}%
-              </span>
+              <span className={`font-bold text-base sm:text-lg ${getBatteryColor(device.battery_level)}`}>{device.battery_level}%</span>
             ) : (
-              <span className="text-gray-400 text-xs sm:text-sm">未登録</span>
+              <span className="text-muted-foreground text-xs sm:text-sm">未登録</span>
             )}
           </div>
 
           {typeof device.battery_level === "number" ? (
-            <div className="relative h-3 sm:h-4 bg-gray-100 rounded-full overflow-hidden">
+            <div className="relative h-3 sm:h-4 bg-muted rounded-full overflow-hidden">
               <div
                 className={`h-full ${getProgressBarClass(device.battery_level, device.is_charging === true)}`}
                 style={{ width: `${device.battery_level}%` }}
@@ -127,8 +125,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
               </div>
             </div>
           ) : (
-            <div className="h-3 sm:h-4 bg-gray-100 rounded-full">
-              <div className="h-full bg-gray-300 rounded-full opacity-50" />
+            <div className="h-3 sm:h-4 bg-muted rounded-full">
+              <div className="h-full bg-muted-foreground rounded-full opacity-50" />
             </div>
           )}
         </div>
@@ -136,7 +134,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         {/* ステータスバッジ */}
         <div className="flex flex-wrap gap-2 mb-4">
           {device.is_charging === true && (
-            <Badge variant="secondary" className="bg-green-50 text-green-700 border-green-200 hover:bg-green-100">
+            <Badge variant="secondary" className="bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-900 hover:bg-green-100 dark:hover:bg-green-800">
               <Zap className="w-3 h-3 mr-1" />
               充電中
             </Badge>
@@ -144,7 +142,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
           {/* バッテリー残量警告バッジ */}
           {typeof device.battery_level === "number" && device.battery_level <= 15 && device.is_charging !== true && (
-            <Badge variant="secondary" className="bg-red-50 text-red-700 border-red-200 hover:bg-red-100">
+            <Badge variant="secondary" className="bg-red-50 dark:bg-red-900 text-red-700 dark:text-red-200 border-red-200 dark:border-red-900 hover:bg-red-100 dark:hover:bg-red-800">
               <Battery className="w-3 h-3 mr-1" />
               残量少
             </Badge>
@@ -154,8 +152,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             variant="secondary"
             className={
               device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
-                ? "bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100"
-                : "bg-gray-50 text-gray-500 border-gray-200"
+                ? "bg-orange-50 dark:bg-orange-900 text-orange-700 dark:text-orange-200 border-orange-200 dark:border-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800"
+                : "bg-muted text-muted-foreground border-muted-foreground/20"
             }
           >
             <Thermometer className="w-3 h-3 mr-1" />
@@ -168,14 +166,14 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         {/* 詳細情報 */}
         <div className="space-y-1 mb-4">
           <div className="flex justify-between text-xs">
-            <span className="text-gray-500">電圧</span>
-            <span className={device.voltage ? "text-gray-700" : "text-gray-400"}>
+            <span className="text-muted-foreground">電圧</span>
+            <span className={device.voltage ? "text-foreground" : "text-muted-foreground"}>
               {device.voltage ? `${device.voltage}V` : "未登録"}
             </span>
           </div>
           <div className="flex justify-between text-xs">
-            <span className="text-gray-500">最終更新</span>
-            <span className="text-gray-700">
+            <span className="text-muted-foreground">最終更新</span>
+            <span className="text-foreground">
               {device.last_updated ? new Date(device.last_updated).toLocaleString("ja-JP") : "未更新"}
             </span>
           </div>

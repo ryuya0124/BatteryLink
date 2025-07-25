@@ -1,17 +1,11 @@
-import { jwtVerify, createRemoteJWKSet } from 'jose';
+import { verifyAuth0JWT } from '../utils.js';
 
-// Auth0の設定
-const AUTH0_DOMAIN = 'auth0.batterysync.net';
-const AUTH0_AUDIENCE = 'https://batterysync.net/';
-const JWKS = createRemoteJWKSet(new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`));
+// ユーザーJWT検証用
+const AUTH0_DOMAIN = 'auth0.batterysync.net'; // フロントのissuer
+const AUTH0_AUDIENCE = 'https://batterysync.net/'; // フロントのaudience
 
-async function verifyJWT(token) {
-  const { payload } = await jwtVerify(token, JWKS, {
-    issuer: `https://${AUTH0_DOMAIN}/`,
-    audience: AUTH0_AUDIENCE,
-  });
-  return payload;
-}
+// 管理API用audience（トークン取得用）
+const MGMT_API_AUDIENCE = 'https://batterysync.jp.auth0.com/api/v2/';
 
 async function getManagementApiToken(env) {
   const res = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
@@ -21,7 +15,7 @@ async function getManagementApiToken(env) {
       grant_type: 'client_credentials',
       client_id: env.MGMT_CLIENT_ID,
       client_secret: env.MGMT_CLIENT_SECRET,
-      audience: `https://${AUTH0_DOMAIN}/api/v2/`
+      audience: MGMT_API_AUDIENCE
     })
   });
   const data = await res.json();
@@ -34,12 +28,14 @@ export async function handleAccountLink(request, env) {
   }
   try {
     const { originalToken, linkToken } = await request.json();
-    const originalPayload = await verifyJWT(originalToken);
-    const linkPayload = await verifyJWT(linkToken);
+    // JWT検証には共通ユーティリティを利用
+    const originalPayload = await verifyAuth0JWT(originalToken);
+    const linkPayload = await verifyAuth0JWT(linkToken);
     if (originalPayload.email !== linkPayload.email) {
       return new Response(JSON.stringify({ error: 'メールアドレスが一致しません' }), { status: 400 });
     }
     const mgmtToken = await getManagementApiToken(env);
+    console.log('mgmtToken', mgmtToken);
     const mainUserId = originalPayload.sub;
     const linkUserId = linkPayload.sub;
     const [provider, user_id] = linkUserId.split('|');
@@ -58,6 +54,7 @@ export async function handleAccountLink(request, env) {
       return new Response(JSON.stringify({ error: err }), { status: 500 });
     }
   } catch (e) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    console.error('accountLink error', e, typeof e, JSON.stringify(e));
+    return new Response(JSON.stringify({ error: e && e.message ? e.message : String(e) }), { status: 500 });
   }
 } 

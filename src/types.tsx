@@ -16,3 +16,5 @@ export interface Device {
   temperature?: number
   voltage?: string
 }
+
+export type ThemeMode = "light" | "dark" | "system";

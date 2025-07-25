@@ -5,7 +5,7 @@ export default function SignupPage() {
   const navigate = useNavigate();
   const { loginWithRedirect } = useAuth0();
   return (
-    <div>
+    <div className="min-h-screen flex items-center justify-center bg-background text-foreground transition-colors">
       <button onClick={() => loginWithRedirect({ authorizationParams: { screen_hint: 'signup' } })}>
         Auth0で新規登録
       </button>

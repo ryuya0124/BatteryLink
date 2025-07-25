@@ -14,6 +14,6 @@ export default function LoginPage() {
   }, [isAuthenticated, isLoading, loginWithRedirect]);
 
   if (showLoader) return <FullScreenLoader label="ログインページを読み込み中..." />;
-  if (isAuthenticated) return <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">ログイン済み</div>;
+  if (isAuthenticated) return <div className="min-h-screen flex items-center justify-center bg-background text-foreground transition-colors">ログイン済み</div>;
   return null;
 } 
