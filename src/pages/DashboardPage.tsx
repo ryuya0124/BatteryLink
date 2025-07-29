@@ -10,7 +10,7 @@ import { DeviceFilterSort } from "../components/DeviceFilterSort";
 import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneModels, fetchWithAuth } from "../lib/utils";
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
-import { Battery, LogOut, UserIcon } from "lucide-react";
+import { Header } from "../components/Header";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
@@ -284,23 +284,9 @@ export default function DashboardPage() {
   return (
     <div className="h-screen bg-background text-foreground transition-colors px-4 sm:px-8 lg:px-16 overflow-hidden">
       <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 h-full flex flex-col">
-        {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2 flex-shrink-0">{error}</div>}
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-8 gap-2 sm:gap-0 flex-shrink-0">
-          <div className="flex items-center gap-2 justify-center sm:justify-start min-w-0">
-            <Battery className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
-            <h1 className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow min-w-0 max-w-full flex-shrink-0 truncate">BatterySync</h1>
-          </div>
-          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-4 mt-2 sm:mt-0 w-full min-w-0">
-            <Button variant="outline" onClick={handleManualFetchDevices} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">デバイス再取得</Button>
-            <Button variant="outline" onClick={handleManualFetchUserSettings} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">設定再取得</Button>
-            <Button variant="outline" onClick={() => navigate("/account")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"> <UserIcon className="h-4 w-4 mr-1" />アカウント</Button>
-            <Button variant="outline" onClick={() => navigate("/apikeys")} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">APIキー管理</Button>
-            <Button variant="outline" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center">
-              <LogOut className="h-4 w-4 mr-2" />
-            </Button>
-          </div>
-        </div>
+        <Header 
+          error={error}
+        />
         {/* 左右分割 */}
         <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 flex-1 min-h-0">
           {/* 左カラム: 固定 */}
