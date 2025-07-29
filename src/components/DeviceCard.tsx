@@ -9,11 +9,13 @@ import type { Device } from "@/types"
 import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
 import { DeviceEditDialog } from "@/components/DeviceEditDialog"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings"
 
 interface DeviceCardProps {
   device: Device
   onUpdate: (id: string) => void
   onDelete: (id: string) => void
+  onEdit: (id: string, updates: Partial<Device>) => void
   updating: boolean
   getBatteryColor: (level: number) => string
   getBatteryCapacityColor: (capacity: number) => string
@@ -24,6 +26,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   device,
   onUpdate,
   onDelete,
+  onEdit,
   updating,
   getBatteryColor,
   getBatteryCapacityColor,
@@ -31,6 +34,8 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 }) => {
   const [editOpen, setEditOpen] = React.useState(false)
   const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
+  const [showSkeleton, setShowSkeleton] = React.useState(false)
+  const { settings, loading, fetchSettings } = useDeviceDisplaySettings(device.uuid)
 
   // バッテリーレベルに応じたプログレスバーのクラスを取得
   const getProgressBarClass = (level: number, isCharging: boolean) => {
@@ -47,9 +52,27 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     }
   }
 
+  // 編集ダイアログが閉じられたときの処理
+  const handleEditClose = React.useCallback(async () => {
+    setShowSkeleton(true)
+    await fetchSettings()
+    
+    // 300ms後にスケルトンを非表示
+    setTimeout(() => {
+      setShowSkeleton(false)
+    }, 300)
+  }, [fetchSettings])
+
+  // 編集ダイアログの状態変更を監視
+  React.useEffect(() => {
+    if (!editOpen) {
+      handleEditClose()
+    }
+  }, [editOpen, handleEditClose])
+
   return (
-    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md">
-      <CardHeader className="pb-3">
+    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md flex flex-col">
+      <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2 sm:gap-0">
           <div className="flex items-start gap-3 flex-1 min-w-0">
             {/* デバイスアイコン */}
@@ -67,12 +90,12 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                   {device.brand || device.model ? (
                     `${device.brand || "不明"} ${device.model || ""}`.trim()
                   ) : (
-                    <span className="text-muted-foreground italic">ブランド・モデル未登録</span>
+                    "詳細情報なし"
                   )}
                 </div>
-                {(device.os_version || device.model_number) && (
+                {device.model_number && (
                   <div className="text-xs text-muted-foreground truncate">
-                    {[device.os_version, device.model_number].filter(Boolean).join(" • ") || "詳細情報なし"}
+                    {device.model_number}
                   </div>
                 )}
               </div>
@@ -92,9 +115,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
       </CardHeader>
 
-      <CardContent className="pt-0">
+      <CardContent className="pt-0 flex-1 flex flex-col">
         {/* バッテリーレベル */}
-        <div className="mb-4">
+        <div className="mb-3 flex-shrink-0">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <Battery className="w-4 h-4 text-muted-foreground" />
@@ -132,7 +155,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
 
         {/* ステータスバッジ */}
-        <div className="flex flex-wrap gap-2 mb-4">
+        <div className="flex flex-wrap gap-2 mb-3 flex-shrink-0 min-h-[28px]">
           {device.is_charging === true && (
             <Badge variant="secondary" className="bg-green-50 dark:bg-green-900 text-green-700 dark:text-green-200 border-green-200 dark:border-green-900 hover:bg-green-100 dark:hover:bg-green-800">
               <Zap className="w-3 h-3 mr-1" />
@@ -148,29 +171,44 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             </Badge>
           )}
 
-          <Badge
-            variant="secondary"
-            className={
-              device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
-                ? "bg-orange-50 dark:bg-orange-900 text-orange-700 dark:text-orange-200 border-orange-200 dark:border-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800"
-                : "bg-muted text-muted-foreground border-muted-foreground/20"
-            }
-          >
-            <Thermometer className="w-3 h-3 mr-1" />
-            {device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
-              ? `${device.temperature}℃`
-              : "温度未登録"}
-          </Badge>
+          {/* 温度バッジ - 常にDOMに存在し、設定に基づいて透明にする */}
+          {!loading && (
+            <Badge
+              variant="secondary"
+              className={`transition-opacity duration-200 ${
+                settings.show_temperature 
+                  ? "opacity-100" 
+                  : "opacity-0 pointer-events-none"
+              } ${
+                device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+                  ? "bg-orange-50 dark:bg-orange-900 text-orange-700 dark:text-orange-200 border-orange-200 dark:border-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800"
+                  : "bg-muted text-muted-foreground border-muted-foreground/20"
+              }`}
+            >
+              <Thermometer className="w-3 h-3 mr-1" />
+              {device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+                ? `${device.temperature}℃`
+                : "温度未登録"}
+            </Badge>
+          )}
         </div>
 
         {/* 詳細情報 */}
-        <div className="space-y-1 mb-4">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">電圧</span>
-            <span className={device.voltage ? "text-foreground" : "text-muted-foreground"}>
-              {device.voltage ? `${device.voltage}V` : "未登録"}
-            </span>
-          </div>
+        <div className="space-y-1 mb-4 flex-1">
+          {/* 電圧 - 常にDOMに存在し、設定に基づいて透明にする */}
+          {!loading && (
+            <div className={`flex justify-between text-xs transition-opacity duration-200 ${
+              settings.show_voltage 
+                ? "opacity-100" 
+                : "opacity-0 pointer-events-none"
+            }`}>
+              <span className="text-muted-foreground">電圧</span>
+              <span className={device.voltage ? "text-foreground" : "text-muted-foreground"}>
+                {device.voltage ? `${device.voltage}V` : "未登録"}
+              </span>
+            </div>
+          )}
+          
           <div className="flex justify-between text-xs">
             <span className="text-muted-foreground">最終更新</span>
             <span className="text-foreground">
@@ -180,7 +218,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
 
         {/* アクションボタン */}
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 mt-auto">
           <Button
             variant="outline"
             onClick={() => onUpdate(device.uuid)}
@@ -199,76 +237,44 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             削除
           </Button>
         </div>
+
+        {/* 編集ダイアログ */}
+        <DeviceEditDialog
+          device={device}
+          open={editOpen}
+          onOpenChange={setEditOpen}
+          onSave={(update) => {
+            onEdit(device.uuid, update)
+            setEditOpen(false)
+          }}
+        />
+
+        {/* 削除確認ダイアログ */}
+        <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>デバイスを削除</DialogTitle>
+              <DialogDescription>
+                「{device.name || "未登録デバイス"}」を削除しますか？この操作は取り消せません。
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex justify-end gap-3 mt-6">
+              <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>
+                キャンセル
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  onDelete(device.uuid)
+                  setConfirmDeleteOpen(false)
+                }}
+              >
+                削除
+              </Button>
+            </div>
+          </DialogContent>
+        </Dialog>
       </CardContent>
-
-      <DeviceEditDialog
-        device={device}
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        onSave={(update) => {
-          alert("保存: " + JSON.stringify(update))
-          setEditOpen(false)
-        }}
-      />
-
-      {/* 削除確認ダイアログ */}
-      <Dialog open={confirmDeleteOpen} onOpenChange={setConfirmDeleteOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>本当に削除しますか？</DialogTitle>
-            <DialogDescription>このデバイスを削除すると元に戻せません。本当に削除しますか？</DialogDescription>
-          </DialogHeader>
-          <div className="flex justify-end gap-2 mt-6">
-            <Button variant="outline" onClick={() => setConfirmDeleteOpen(false)}>キャンセル</Button>
-            <Button variant="destructive" onClick={() => { onDelete(device.uuid); setConfirmDeleteOpen(false); }}>削除</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      <style>{`
-        /* 充電中 - 緑色のアニメーション */
-        .charging-progress {
-          background: linear-gradient(90deg, #10b981, #34d399, #6ee7b7);
-          background-size: 200% 100%;
-          animation: charging-flow 2s ease-in-out infinite;
-          position: relative;
-        }
-
-        /* 危険レベル (0-15%) - 赤色のパルス */
-        .critical-battery {
-          background: #ef4444;
-          animation: critical-pulse 1.5s ease-in-out infinite;
-        }
-
-        /* 低レベル (16-30%) - オレンジ色 */
-        .low-battery {
-          background: #f97316;
-        }
-
-        /* 中レベル (31-60%) - 黄色 */
-        .medium-battery {
-          background: #eab308;
-        }
-
-        /* 高レベル (61-100%) - 青色 */
-        .high-battery {
-          background: #3b82f6;
-        }
-
-        @keyframes charging-flow {
-          0% { background-position: 200% 0; }
-          100% { background-position: -200% 0; }
-        }
-
-        @keyframes critical-pulse {
-          0%, 100% { 
-            opacity: 1; 
-          }
-          50% { 
-            opacity: 0.7; 
-          }
-        }
-      `}</style>
     </Card>
   )
 }

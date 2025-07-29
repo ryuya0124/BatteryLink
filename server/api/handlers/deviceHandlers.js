@@ -82,6 +82,56 @@ export async function handlePutDevice(request, env, uuid) {
   return new Response("デバイス更新完了", { status: 200 });
 }
 
+export async function handlePatchDevice(request, env, uuid) {
+  const auth = request.headers.get('Authorization');
+  if (!auth || !auth.startsWith('Bearer ')) {
+    return new Response('Unauthorized', { status: 401 });
+  }
+  const token = auth.slice(7);
+  const payload = await verifyAuth0JWT(token);
+  try {
+    const body = await request.json();
+    const updateFields = [];
+    const bindValues = [];
+    
+    // 更新可能なフィールドをチェック
+    if (body.name !== undefined) {
+      updateFields.push('name = ?');
+      bindValues.push(body.name);
+    }
+    if (body.brand !== undefined) {
+      updateFields.push('brand = ?');
+      bindValues.push(body.brand);
+    }
+    if (body.model !== undefined) {
+      updateFields.push('model = ?');
+      bindValues.push(body.model);
+    }
+    if (body.model_number !== undefined) {
+      updateFields.push('model_number = ?');
+      bindValues.push(body.model_number);
+    }
+    
+    if (updateFields.length === 0) {
+      return new Response("更新するフィールドがありません", { status: 400 });
+    }
+    
+    updateFields.push('last_updated = ?');
+    bindValues.push(new Date().toISOString());
+    bindValues.push(uuid);
+    bindValues.push(payload.sub);
+    
+    await env.DB.prepare(
+      `UPDATE devices SET ${updateFields.join(', ')} WHERE uuid = ? AND user_id = ?`
+    ).bind(...bindValues).run();
+    
+    return new Response("デバイス編集完了", { status: 200 });
+  } catch (e) {
+    console.log("handlePatchDevice error:", e);
+    return new Response("編集エラー", { status: 400 });
+  }
+}
+
 export async function handleDeleteDevice(request, env, uuid) {
   // まずJWT認証を試す
   const auth = request.headers.get('Authorization');

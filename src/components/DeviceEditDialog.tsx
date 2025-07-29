@@ -1,11 +1,12 @@
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Switch } from "@/components/ui/switch"
 import { Copy, Check } from "lucide-react"
 import type { Device } from "@/types"
+import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings"
 
 interface DeviceEditDialogProps {
   device: Device
@@ -19,14 +20,26 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
   const [model, setModel] = useState(device.model || "")
   const [name, setName] = useState(device.name || "")
   const [modelNumber, setModelNumber] = useState(device.model_number || "")
-
-  // 表示/非表示設定（例: 温度・電圧・容量）
-  const [showTemperature, setShowTemperature] = useState(true)
-  const [showVoltage, setShowVoltage] = useState(true)
-  const [showCapacity, setShowCapacity] = useState(true)
   const [copied, setCopied] = useState(false)
+  
+  const { settings, updateSettings, fetchSettings } = useDeviceDisplaySettings(device.uuid)
 
-  const [osVersion] = useState(device.os_version || "")
+  // 表示設定の状態
+  const [showTemperature, setShowTemperature] = useState(settings.show_temperature)
+  const [showVoltage, setShowVoltage] = useState(settings.show_voltage)
+
+  // 設定が変更されたときに状態を更新
+  useEffect(() => {
+    setShowTemperature(settings.show_temperature)
+    setShowVoltage(settings.show_voltage)
+  }, [settings])
+
+  // ダイアログが開いたときに設定を再取得
+  useEffect(() => {
+    if (open) {
+      fetchSettings()
+    }
+  }, [open, fetchSettings])
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(device.uuid)
@@ -34,9 +47,29 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
     setTimeout(() => setCopied(false), 1200)
   }
 
-  const handleSave = () => {
+  const handleSave = async () => {
+    // デバイス情報を保存
     onSave({ name, brand, model, model_number: modelNumber })
+    
+    // 表示設定を保存
+    await updateSettings({
+      show_temperature: showTemperature,
+      show_voltage: showVoltage,
+    })
+    
     onOpenChange(false)
+  }
+
+  const handleTemperatureChange = async (checked: boolean) => {
+    setShowTemperature(checked)
+    console.log(`Temperature setting changed to: ${checked}`)
+    await updateSettings({ show_temperature: checked })
+  }
+
+  const handleVoltageChange = async (checked: boolean) => {
+    setShowVoltage(checked)
+    console.log(`Voltage setting changed to: ${checked}`)
+    await updateSettings({ show_voltage: checked })
   }
 
   return (
@@ -102,16 +135,6 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
             />
           </div>
 
-          {/* OSバージョン */}
-          <div className="space-y-2">
-            <label className="block text-sm font-medium text-foreground">OSバージョン</label>
-            <Input
-              value={osVersion}
-              disabled
-              className="bg-muted/50 border-input text-muted-foreground cursor-not-allowed"
-            />
-          </div>
-
           {/* UUID */}
           <div className="space-y-2">
             <label className="block text-sm font-medium text-foreground">UUID</label>
@@ -141,15 +164,11 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
             <div className="space-y-3">
               <div className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-md">
                 <span className="text-sm font-medium text-foreground">温度</span>
-                <Switch checked={showTemperature} onCheckedChange={setShowTemperature} />
+                <Switch checked={showTemperature} onCheckedChange={handleTemperatureChange} />
               </div>
               <div className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-md">
                 <span className="text-sm font-medium text-foreground">電圧</span>
-                <Switch checked={showVoltage} onCheckedChange={setShowVoltage} />
-              </div>
-              <div className="flex items-center justify-between p-3 bg-muted/20 border border-border rounded-md">
-                <span className="text-sm font-medium text-foreground">容量</span>
-                <Switch checked={showCapacity} onCheckedChange={setShowCapacity} />
+                <Switch checked={showVoltage} onCheckedChange={handleVoltageChange} />
               </div>
             </div>
           </div>

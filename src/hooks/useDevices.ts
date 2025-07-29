@@ -46,15 +46,30 @@ export function useDevices(user: AppUser | null) {
   // デバイス更新
   const updateDevice = useCallback(async (uuid: string, updateData: Partial<Device>) => {
     setUpdatingDevices((prev) => new Set(prev).add(uuid));
-    // 実際の更新処理（APIリクエストが必要ならここで）
-    // await fetchWithAuth(...)
-    await fetchDevices();
-    setUpdatingDevices((prev) => {
-      const newSet = new Set(prev);
-      newSet.delete(uuid);
-      return newSet;
-    });
-  }, [fetchDevices]);
+    try {
+      const res = await fetchWithAuth(`/api/devices/${encodeURIComponent(uuid)}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(updateData),
+      }, getAccessTokenSilently);
+      if (res && res.ok) {
+        await fetchDevices();
+      } else {
+        throw new Error("デバイス更新に失敗しました");
+      }
+    } catch (error) {
+      console.error("デバイス更新エラー:", error);
+      throw error;
+    } finally {
+      setUpdatingDevices((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(uuid);
+        return newSet;
+      });
+    }
+  }, [fetchDevices, getAccessTokenSilently]);
 
   // デバイス削除
   const deleteDevice = useCallback(async (uuid: string) => {

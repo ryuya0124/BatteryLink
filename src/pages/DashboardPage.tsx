@@ -11,10 +11,10 @@ import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneMo
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
 import { Battery, LogOut, UserIcon } from "lucide-react";
-import type { Device } from "../types";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
+import type { Device } from "../types";
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -182,6 +182,15 @@ export default function DashboardPage() {
       await deleteDevice(uuid);
     } catch (err: any) {
       setError("デバイス削除に失敗しました: " + (err?.message || "不明なエラー"));
+    }
+  };
+
+  const handleEditDevice = async (uuid: string, updates: Partial<Device>) => {
+    setError(null);
+    try {
+      await updateDevice(uuid, updates);
+    } catch (err: any) {
+      setError("デバイス編集に失敗しました: " + (err?.message || "不明なエラー"));
     }
   };
 
@@ -367,6 +376,7 @@ export default function DashboardPage() {
                       device={device}
                       onUpdate={handleUpdateDevice}
                       onDelete={handleDeleteDevice}
+                      onEdit={handleEditDevice}
                       updating={updatingDevices.has(device.uuid)}
                       getBatteryColor={getBatteryColor}
                       getBatteryCapacityColor={getBatteryCapacityColor}
