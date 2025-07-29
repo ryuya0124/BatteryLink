@@ -14,6 +14,7 @@ import { Battery, LogOut, UserIcon } from "lucide-react";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
+import { useFilterSettings } from "@/hooks/useFilterSettings";
 import type { Device } from "../types";
 
 export default function DashboardPage() {
@@ -31,10 +32,8 @@ export default function DashboardPage() {
   const isGlobalLoading = (isLoading || loading || autoUpdateLoading) && updatingDevices.size === 0 && !manualRefresh;
   const showLoader = useDelayedLoader(isGlobalLoading, authLoadingShown ? 200 : 50);
 
-  const [sortBy, setSortBy] = useState<"name" | "battery" | "brand" | "updated">("updated");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
-  const [filterBrand, setFilterBrand] = useState<string>("all");
-  const [filterBattery, setFilterBattery] = useState<string>("all");
+  // フィルタ設定フックを使用
+  const { settings: filterSettings } = useFilterSettings();
 
   const [deviceName, setDeviceName] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
@@ -95,31 +94,31 @@ export default function DashboardPage() {
 
   const filteredAndSortedDevices = devices
     .filter((device) => {
-      const brandMatch = filterBrand === "all" || device.brand === filterBrand;
+      const brandMatch = filterSettings.filterBrand === "all" || device.brand === filterSettings.filterBrand;
       const batteryMatch =
-        filterBattery === "all" ||
-        (filterBattery === "low" && device.battery_level <= 20) ||
-        (filterBattery === "medium" && device.battery_level > 20 && device.battery_level <= 50) ||
-        (filterBattery === "high" && device.battery_level > 50);
+        filterSettings.filterBattery === "all" ||
+        (filterSettings.filterBattery === "low" && device.battery_level <= 20) ||
+        (filterSettings.filterBattery === "medium" && device.battery_level > 20 && device.battery_level <= 50) ||
+        (filterSettings.filterBattery === "high" && device.battery_level > 50);
       return brandMatch && batteryMatch;
     })
     .sort((a, b) => {
       let comparison = 0;
-      switch (sortBy) {
+      switch (filterSettings.sortBy) {
         case "name":
           comparison = a.name.localeCompare(b.name);
           break;
-        case "battery":
+        case "battery_level":
           comparison = a.battery_level - b.battery_level;
           break;
-        case "brand":
-          comparison = a.brand.localeCompare(b.brand);
-          break;
-        case "updated":
+        case "last_updated":
           comparison = new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime();
           break;
+        default:
+          comparison = a.name.localeCompare(b.name);
+          break;
       }
-      return sortOrder === "asc" ? comparison : -comparison;
+      return filterSettings.sortOrder === "asc" ? comparison : -comparison;
     });
 
   const handleAddDevice = async (e: React.FormEvent) => {
@@ -198,55 +197,32 @@ export default function DashboardPage() {
     try {
       const result = await fetchBatteryInfo(deviceUuid);
       if (result.success && result.data) {
-        const updatedDevice: any = {
-          battery_level: result.data.batteryLevel,
-          is_charging: result.data.isCharging,
-          battery_capacity: result.data.batteryCapacity,
-          last_updated: result.data.lastUpdated,
-        };
-        if (result.data.temperature !== undefined) {
-          updatedDevice.temperature = result.data.temperature;
-        }
-        if (result.data.voltage !== undefined) {
-          updatedDevice.voltage = result.data.voltage;
-        }
+        const { battery_level, is_charging, temperature, voltage } = result.data;
+        await updateDevice(deviceUuid, {
+          battery_level,
+          is_charging,
+          temperature,
+          voltage,
+          last_updated: new Date().toISOString(),
+        });
+      } else {
+        throw new Error(result.error || "バッテリー情報の取得に失敗しました");
       }
     } catch (error) {
-      console.error("Failed to update battery:", error);
+      console.error("デバイス更新エラー:", error);
+      throw error;
     }
-  }, []);
+  }, [updateDevice, getAccessTokenSilently]);
 
   const updateAllDevicesBattery = useCallback(async () => {
-    for (const device of devices) {
-      await updateDeviceBattery(device.uuid);
+    if (!devices.length) return;
+    const updatePromises = devices.map(device => updateDeviceBattery(device.uuid));
+    try {
+      await Promise.allSettled(updatePromises);
+    } catch (error) {
+      console.error("全デバイス更新エラー:", error);
     }
   }, [devices, updateDeviceBattery]);
-
-  useEffect(() => {
-    if (deviceBrand && deviceModel) {
-      const brandModels = phoneModels[deviceBrand as keyof typeof phoneModels];
-      const modelInfo = brandModels.find((m: any) => m.model === deviceModel);
-      setSelectedModelInfo(modelInfo);
-      setDeviceOsVersion("");
-      setDeviceModelNumber("");
-    }
-  }, [deviceBrand, deviceModel]);
-
-  // 初回表示時のみ自動fetch（どうしても必要な副作用）
-  useEffect(() => {
-    if (isAuthenticated && user) {
-      fetchDevices();
-    }
-    // eslint-disable-next-line
-  }, [isAuthenticated, user]);
-
-  useEffect(() => {
-    if (isAuthenticated) {
-      fetchUserSettings();
-    } else {
-      setAutoUpdateLoading(false); // 未認証時も必ず解除
-    }
-  }, [isAuthenticated]);
 
   const fetchUserSettings = async () => {
     setAutoUpdateLoading(true);
@@ -256,39 +232,48 @@ export default function DashboardPage() {
         const data = await res.json();
         setAutoUpdateEnabled(!!data.auto_update);
       }
-    } catch (e) {
-      // エラー時も何もしない
+    } catch (error) {
+      console.error("ユーザー設定取得エラー:", error);
     }
-    setAutoUpdateLoading(false); // 必ず最後に呼ぶ
+    setAutoUpdateLoading(false);
   };
 
   const handleAutoUpdateChange = async (enabled: boolean) => {
-    const res = await fetchWithAuth(
-      "/api/auth/auto-update",
-      {
-        method: "PATCH",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ auto_update: enabled }),
-      },
-      getAccessTokenSilently
-    );
-    if (res.ok) {
-      setAutoUpdateEnabled(enabled);
-    } else {
-      alert("自動更新の変更に失敗しました");
+    setAutoUpdateLoading(true);
+    try {
+      const res = await fetchWithAuth(
+        "/api/auth/auto-update",
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ auto_update: enabled }),
+        },
+        getAccessTokenSilently
+      );
+      if (res.ok) {
+        setAutoUpdateEnabled(enabled);
+      }
+    } catch (error) {
+      console.error("自動更新設定エラー:", error);
     }
+    setAutoUpdateLoading(false);
   };
 
   const handleManualRefresh = async () => {
     setManualRefresh(true);
-    const start = Date.now();
-    await fetchDevices();
-    const elapsed = Date.now() - start;
-    if (elapsed < MIN_SPIN_DURATION) {
-      await new Promise(res => setTimeout(res, MIN_SPIN_DURATION - elapsed));
+    try {
+      await updateAllDevicesBattery();
+    } finally {
+      setManualRefresh(false);
     }
-    setManualRefresh(false);
   };
+
+  useEffect(() => {
+    if (isAuthenticated && user) {
+      handleManualFetchDevices();
+      fetchUserSettings();
+    }
+  }, [isAuthenticated, user]);
 
   if (authLoadingShown && isGlobalLoading) {
     return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
@@ -340,14 +325,6 @@ export default function DashboardPage() {
           {/* 右カラム: スクロール＋フィルタ上部 */}
           <div className="w-full lg:w-3/4 flex flex-col h-screen overflow-y-auto px-0" style={{ maxHeight: '100vh' }}>
             <DeviceFilterSort
-              sortBy={sortBy}
-              setSortBy={setSortBy}
-              sortOrder={sortOrder}
-              setSortOrder={setSortOrder}
-              filterBrand={filterBrand}
-              setFilterBrand={setFilterBrand}
-              filterBattery={filterBattery}
-              setFilterBattery={setFilterBattery}
               phoneModels={phoneModels}
             />
             {/* AddDeviceDialog本体は常にレンダリング */}

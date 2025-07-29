@@ -2,101 +2,128 @@ import React from "react"
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { ArrowUpDown, ListFilter } from "lucide-react"
+import { useFilterSettings } from "@/hooks/useFilterSettings"
 
 interface DeviceFilterSortProps {
-  sortBy: "name" | "battery" | "brand" | "updated"
-  setSortBy: (v: "name" | "battery" | "brand" | "updated") => void
-  sortOrder: "asc" | "desc"
-  setSortOrder: (v: "asc" | "desc") => void
-  filterBrand: string
-  setFilterBrand: (v: string) => void
-  filterBattery: string
-  setFilterBattery: (v: string) => void
   phoneModels: Record<string, any[]>
 }
 
 export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
-  sortBy,
-  setSortBy,
-  sortOrder,
-  setSortOrder,
-  filterBrand,
-  setFilterBrand,
-  filterBattery,
-  setFilterBattery,
   phoneModels,
-}) => (
-  <div className="flex flex-wrap w-full gap-2 sm:gap-4 mb-6">
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="sm:w-auto min-w-0">
-          <ArrowUpDown className="h-4 w-4 mr-2" />
-          並び替え:{" "}
-          {sortBy === "updated"
-            ? "更新日時"
-            : sortBy === "name"
-            ? "デバイス名"
-            : sortBy === "battery"
-            ? "バッテリー残量"
-            : "ブランド"}
-          {sortOrder === "asc" ? " (昇順)" : " (降順)"}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>並び替え</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setSortBy("updated")}>更新日時 {sortBy === "updated" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setSortBy("name")}>デバイス名 {sortBy === "name" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setSortBy("battery")}>バッテリー残量 {sortBy === "battery" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setSortBy("brand")}>ブランド {sortBy === "brand" && "✓"}</DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuLabel>順序</DropdownMenuLabel>
-        <DropdownMenuItem onClick={() => setSortOrder("desc")}>降順 {sortOrder === "desc" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setSortOrder("asc")}>昇順 {sortOrder === "asc" && "✓"}</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
+}) => {
+  const { settings, updateSettings } = useFilterSettings();
 
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="sm:w-auto min-w-0">
-          <ListFilter className="h-4 w-4 mr-2" />
-          ブランド: {filterBrand === "all" ? "全て" : filterBrand}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>ブランドでフィルタ</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setFilterBrand("all")}>全て {filterBrand === "all" && "✓"}</DropdownMenuItem>
-        {Object.keys(phoneModels).map((brand) => (
-          <DropdownMenuItem key={brand} onClick={() => setFilterBrand(brand)}>
-            {brand} {filterBrand === brand && "✓"}
+  const handleSortByChange = (newSortBy: 'name' | 'battery_level' | 'last_updated') => {
+    updateSettings({ sortBy: newSortBy });
+  };
+
+  const handleSortOrderChange = (newSortOrder: 'asc' | 'desc') => {
+    updateSettings({ sortOrder: newSortOrder });
+  };
+
+  const handleFilterBrandChange = (newFilterBrand: string) => {
+    updateSettings({ filterBrand: newFilterBrand });
+  };
+
+  const handleFilterBatteryChange = (newFilterBattery: string) => {
+    updateSettings({ filterBattery: newFilterBattery });
+  };
+
+  const getSortByDisplayName = (sortBy: string) => {
+    switch (sortBy) {
+      case 'last_updated': return '更新日時';
+      case 'name': return 'デバイス名';
+      case 'battery_level': return 'バッテリー残量';
+      default: return 'デバイス名';
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap w-full gap-2 sm:gap-4 mb-6">
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="sm:w-auto min-w-0">
+            <ArrowUpDown className="h-4 w-4 mr-2" />
+            並び替え:{" "}
+            {getSortByDisplayName(settings.sortBy)}
+            {settings.sortOrder === "asc" ? " (昇順)" : " (降順)"}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuLabel>並び替え</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleSortByChange("last_updated")}>
+            更新日時 {settings.sortBy === "last_updated" && "✓"}
           </DropdownMenuItem>
-        ))}
-      </DropdownMenuContent>
-    </DropdownMenu>
+          <DropdownMenuItem onClick={() => handleSortByChange("name")}>
+            デバイス名 {settings.sortBy === "name" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleSortByChange("battery_level")}>
+            バッテリー残量 {settings.sortBy === "battery_level" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuLabel>順序</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => handleSortOrderChange("desc")}>
+            降順 {settings.sortOrder === "desc" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleSortOrderChange("asc")}>
+            昇順 {settings.sortOrder === "asc" && "✓"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
 
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="sm:w-auto min-w-0">
-          <ListFilter className="h-4 w-4 mr-2" />
-          残量:{" "}
-          {filterBattery === "all"
-            ? "全て"
-            : filterBattery === "high"
-            ? "高 (50%以上)"
-            : filterBattery === "medium"
-            ? "中 (21-50%)"
-            : "低 (20%以下)"}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="start">
-        <DropdownMenuLabel>バッテリー残量でフィルタ</DropdownMenuLabel>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => setFilterBattery("all")}>全て {filterBattery === "all" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setFilterBattery("high")}>高 (50%以上) {filterBattery === "high" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setFilterBattery("medium")}>中 (21-50%) {filterBattery === "medium" && "✓"}</DropdownMenuItem>
-        <DropdownMenuItem onClick={() => setFilterBattery("low")}>低 (20%以下) {filterBattery === "low" && "✓"}</DropdownMenuItem>
-      </DropdownMenuContent>
-    </DropdownMenu>
-  </div>
-) 
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="sm:w-auto min-w-0">
+            <ListFilter className="h-4 w-4 mr-2" />
+            ブランド: {settings.filterBrand === "all" ? "全て" : settings.filterBrand}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuLabel>ブランドでフィルタ</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleFilterBrandChange("all")}>
+            全て {settings.filterBrand === "all" && "✓"}
+          </DropdownMenuItem>
+          {Object.keys(phoneModels).map((brand) => (
+            <DropdownMenuItem key={brand} onClick={() => handleFilterBrandChange(brand)}>
+              {brand} {settings.filterBrand === brand && "✓"}
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" className="sm:w-auto min-w-0">
+            <ListFilter className="h-4 w-4 mr-2" />
+            残量:{" "}
+            {settings.filterBattery === "all"
+              ? "全て"
+              : settings.filterBattery === "high"
+              ? "高 (50%以上)"
+              : settings.filterBattery === "medium"
+              ? "中 (21-50%)"
+              : "低 (20%以下)"}
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start">
+          <DropdownMenuLabel>バッテリー残量でフィルタ</DropdownMenuLabel>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem onClick={() => handleFilterBatteryChange("all")}>
+            全て {settings.filterBattery === "all" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleFilterBatteryChange("high")}>
+            高 (50%以上) {settings.filterBattery === "high" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleFilterBatteryChange("medium")}>
+            中 (21-50%) {settings.filterBattery === "medium" && "✓"}
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleFilterBatteryChange("low")}>
+            低 (20%以下) {settings.filterBattery === "low" && "✓"}
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  )
+} 
