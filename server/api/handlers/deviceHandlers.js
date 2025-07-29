@@ -51,6 +51,12 @@ export async function handlePostDevice(request, env) {
       device.name = convertToHalfWidth(device.name);
     }
 
+    // undefinedの値をnullに変換
+    const batteryLevel = device.battery_level !== undefined ? device.battery_level : null;
+    const temperature = device.temperature !== undefined ? device.temperature : null;
+    const voltage = device.voltage !== undefined ? device.voltage : null;
+    const isCharging = device.is_charging !== undefined ? (device.is_charging ? 1 : 0) : 0;
+
     const { results } = await env.DB.prepare(
       "INSERT INTO devices (uuid, user_id, name, brand, model, model_number, battery_level, last_updated, is_charging, temperature, voltage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
@@ -60,11 +66,11 @@ export async function handlePostDevice(request, env) {
       device.brand,
       device.model,
       device.model_number,
-      device.battery_level,
+      batteryLevel,
       device.last_updated,
-      device.is_charging ? 1 : 0,
-      device.temperature,
-      device.voltage
+      isCharging,
+      temperature,
+      voltage
     ).run();
 
     return new Response(JSON.stringify({ success: true, device }), { status: 201 });

@@ -282,11 +282,11 @@ export default function DashboardPage() {
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (
-    <div className="min-h-screen bg-background text-foreground transition-colors px-4 sm:px-8 lg:px-16">
-      <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 my-2 sm:my-4 lg:my-8">
-        {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2">{error}</div>}
+    <div className="h-screen bg-background text-foreground transition-colors px-4 sm:px-8 lg:px-16 overflow-hidden">
+      <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 h-full flex flex-col">
+        {error && <div className="mb-4 text-red-600 font-bold bg-red-50 border border-red-200 rounded px-4 py-2 flex-shrink-0">{error}</div>}
         {/* Header */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-8 gap-2 sm:gap-0">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 sm:mb-8 gap-2 sm:gap-0 flex-shrink-0">
           <div className="flex items-center gap-2 justify-center sm:justify-start min-w-0">
             <Battery className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
             <h1 className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow min-w-0 max-w-full flex-shrink-0 truncate">BatterySync</h1>
@@ -302,9 +302,9 @@ export default function DashboardPage() {
           </div>
         </div>
         {/* 左右分割 */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 h-screen overflow-hidden">
+        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 flex-1 min-h-0">
           {/* 左カラム: 固定 */}
-          <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 sticky top-0 h-[calc(100vh-64px)] px-0">
+          <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 px-0">
             <AutoUpdateControl
               autoUpdateEnabled={autoUpdateEnabled}
               setAutoUpdateEnabled={handleAutoUpdateChange}
@@ -323,10 +323,12 @@ export default function DashboardPage() {
             )}
           </div>
           {/* 右カラム: スクロール＋フィルタ上部 */}
-          <div className="w-full lg:w-3/4 flex flex-col h-screen overflow-y-auto px-0" style={{ maxHeight: '100vh' }}>
-            <DeviceFilterSort
-              phoneModels={phoneModels}
-            />
+          <div className="w-full lg:w-3/4 flex flex-col min-h-0">
+            <div className="flex-shrink-0">
+              <DeviceFilterSort
+                phoneModels={phoneModels}
+              />
+            </div>
             {/* AddDeviceDialog本体は常にレンダリング */}
             <AddDeviceDialog
               open={showAddDevice}
@@ -343,35 +345,36 @@ export default function DashboardPage() {
               selectedModelInfo={selectedModelInfo}
               onSubmit={handleAddDevice}
             />
-            {/* デバイスカードセクション ラップ */}
-            {/* デバイスカードセクション ラップ */}
-            <div className="w-full px-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
-                {filteredAndSortedDevices.map((device) => (
-                  <div key={device.uuid} className="w-full">
-                    <DeviceCard
-                      device={device}
-                      onUpdate={handleUpdateDevice}
-                      onDelete={handleDeleteDevice}
-                      onEdit={handleEditDevice}
-                      updating={updatingDevices.has(device.uuid)}
-                      getBatteryColor={getBatteryColor}
-                      getBatteryCapacityColor={getBatteryCapacityColor}
-                      getBatteryCapacityBg={getBatteryCapacityBg}
-                    />
-                  </div>
-                ))}
+            {/* デバイスカードセクション スクロール可能エリア */}
+            <div className="flex-1 overflow-y-auto min-h-0 px-0">
+              <div className="w-full px-0">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+                  {filteredAndSortedDevices.map((device) => (
+                    <div key={device.uuid} className="w-full">
+                      <DeviceCard
+                        device={device}
+                        onUpdate={handleUpdateDevice}
+                        onDelete={handleDeleteDevice}
+                        onEdit={handleEditDevice}
+                        updating={updatingDevices.has(device.uuid)}
+                        getBatteryColor={getBatteryColor}
+                        getBatteryCapacityColor={getBatteryCapacityColor}
+                        getBatteryCapacityBg={getBatteryCapacityBg}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
+              {filteredAndSortedDevices.length === 0 && devices.length > 0 && (
+                <NoDevices type="filtered" />
+              )}
+              {filteredAndSortedDevices.length === 0 && devices.length === 0 && (
+                <NoDevices type="empty" onAddDevice={() => setShowAddDevice(true)} />
+              )}
             </div>
-            {filteredAndSortedDevices.length === 0 && devices.length > 0 && (
-              <NoDevices type="filtered" />
-            )}
-            {filteredAndSortedDevices.length === 0 && devices.length === 0 && (
-              <NoDevices type="empty" onAddDevice={() => setShowAddDevice(true)} />
-            )}
           </div>
         </div>
-        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full">
+        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full flex-shrink-0">
           <p>© 2025 BatterySync</p>
         </footer>
       </div>
