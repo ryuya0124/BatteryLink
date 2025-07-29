@@ -1,25 +1,24 @@
 "use client"
 
-import React from "react"
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
-import { Zap, Thermometer, RefreshCw, Trash2, Pencil, Battery, Smartphone } from "lucide-react"
-import type { Device } from "@/types"
-import { DropdownMenu, DropdownMenuTrigger, DropdownMenuContent, DropdownMenuItem } from "@/components/ui/dropdown-menu"
-import { DeviceEditDialog } from "@/components/DeviceEditDialog"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings"
+import React, { useState, useEffect, useRef } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { DeviceEditDialog } from "./DeviceEditDialog";
+import { Smartphone, Battery, Zap, Pencil, Trash2, RefreshCw, Thermometer, Gauge } from "lucide-react";
+import { Device } from "../types";
+import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 
 interface DeviceCardProps {
-  device: Device
-  onUpdate: (id: string) => void
-  onDelete: (id: string) => void
-  onEdit: (id: string, updates: Partial<Device>) => void
-  updating: boolean
-  getBatteryColor: (level: number) => string
-  getBatteryCapacityColor: (capacity: number) => string
-  getBatteryCapacityBg: (capacity: number) => string
+  device: Device;
+  onUpdate: (id: string) => void;
+  onDelete: (id: string) => void;
+  onEdit: (id: string, updates: Partial<Device>) => void;
+  updating: boolean;
+  getBatteryColor: (level: number) => string;
+  getBatteryCapacityColor: (capacity: number) => string;
+  getBatteryCapacityBg: (capacity: number) => string;
 }
 
 export const DeviceCard: React.FC<DeviceCardProps> = ({
@@ -32,43 +31,37 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   getBatteryCapacityColor,
   getBatteryCapacityBg,
 }) => {
-  const [editOpen, setEditOpen] = React.useState(false)
-  const [confirmDeleteOpen, setConfirmDeleteOpen] = React.useState(false)
-  const [showSkeleton, setShowSkeleton] = React.useState(false)
-  const { settings, loading, fetchSettings } = useDeviceDisplaySettings(device.uuid)
+  const [editOpen, setEditOpen] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
+  const [showSkeleton, setShowSkeleton] = useState(false);
+  const { settings, loading, fetchSettings } = useDeviceDisplaySettings(device.uuid);
+  const isMountedRef = useRef(true);
 
-  // バッテリーレベルに応じたプログレスバーのクラスを取得
   const getProgressBarClass = (level: number, isCharging: boolean) => {
-    if (isCharging) {
-      return "charging-progress"
-    } else if (level <= 15) {
-      return "critical-battery"
-    } else if (level <= 30) {
-      return "low-battery"
-    } else if (level <= 60) {
-      return "medium-battery"
-    } else {
-      return "high-battery"
-    }
-  }
+    if (isCharging) return "bg-green-500";
+    if (level <= 15) return "bg-red-500";
+    if (level <= 30) return "bg-orange-500";
+    return "bg-blue-500";
+  };
 
-  // 編集ダイアログが閉じられたときの処理
-  const handleEditClose = React.useCallback(async () => {
-    setShowSkeleton(true)
-    await fetchSettings()
-    
-    // 300ms後にスケルトンを非表示
-    setTimeout(() => {
-      setShowSkeleton(false)
-    }, 300)
-  }, [fetchSettings])
+  const handleEditClose = () => {
+    setEditOpen(false);
+    setShowSkeleton(true);
+    fetchSettings();
+    setTimeout(() => setShowSkeleton(false), 300);
+  };
 
-  // 編集ダイアログの状態変更を監視
-  React.useEffect(() => {
-    if (!editOpen) {
-      handleEditClose()
+  useEffect(() => {
+    return () => {
+      isMountedRef.current = false;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (editOpen) {
+      fetchSettings();
     }
-  }, [editOpen, handleEditClose])
+  }, [editOpen, fetchSettings]);
 
   return (
     <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md flex flex-col">
@@ -82,7 +75,10 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
 
             {/* デバイス情報 */}
             <div className="flex-1 min-w-0">
-              <CardTitle className="text-base sm:text-lg font-semibold text-foreground truncate">
+              <CardTitle 
+                className="text-base sm:text-lg font-semibold text-foreground cursor-help truncate"
+                title={device.name || "未登録デバイス"}
+              >
                 {device.name || <span className="text-muted-foreground italic">未登録デバイス</span>}
               </CardTitle>
               <div className="mt-1 space-y-1">
@@ -102,7 +98,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             </div>
           </div>
 
-          {/* メニューボタン → 編集ボタンに変更 */}
+          {/* 編集ボタン */}
           <Button
             variant="outline"
             size="sm"

@@ -1,12 +1,13 @@
-import type React from "react"
-import { useState, useEffect } from "react"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
-import { Switch } from "@/components/ui/switch"
-import { Copy, Check } from "lucide-react"
-import type { Device } from "@/types"
-import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings"
+import React, { useState, useEffect } from "react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
+import { Copy, Check } from "lucide-react";
+import type { Device } from "@/types";
+import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings";
 
 interface DeviceEditDialogProps {
   device: Device
@@ -48,8 +49,12 @@ export const DeviceEditDialog: React.FC<DeviceEditDialogProps> = ({ device, open
   }
 
   const handleSave = async () => {
-    // デバイス情報を保存
-    onSave({ name, brand, model, model_number: modelNumber })
+    onSave({
+      name: name.trim(),
+      brand: brand,
+      model: model,
+      model_number: modelNumber,
+    });
     
     // 表示設定を保存
     await updateSettings({

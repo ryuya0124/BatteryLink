@@ -127,7 +127,7 @@ export default function DashboardPage() {
     if (!user) return;
     const newDevice = {
       uuid: crypto.randomUUID(),
-      name: deviceName,
+      name: deviceName.trim(),
       brand: deviceBrand,
       model: deviceModel,
       model_number: deviceModelNumber,

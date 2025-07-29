@@ -1,6 +1,15 @@
 import { verifyAuth0JWT } from '../utils.js';
 import { randomOpaqueToken, sha256, verifyApiKeyAndUuid } from "../utils.js";
 
+// 全角英数字を半角に変換する関数
+function convertToHalfWidth(text) {
+  if (!text) return text;
+  return text
+    .replace(/[Ａ-Ｚ]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[ａ-ｚ]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+    .replace(/[０-９]/g, (s) => String.fromCharCode(s.charCodeAt(0) - 0xFEE0));
+}
+
 export async function handleGetDevices(request, env) {
   const auth = request.headers.get('Authorization');
   if (!auth || !auth.startsWith('Bearer ')) {
@@ -33,31 +42,35 @@ export async function handlePostDevice(request, env) {
   }
   const token = auth.slice(7);
   const payload = await verifyAuth0JWT(token);
+  
   try {
-    const body = await request.json();
-    const uuid = body.uuid || crypto.randomUUID();
-    await env.DB.prepare(
-      `INSERT INTO devices (id, user_id, uuid, name, brand, model, os_version, model_number, battery_level, is_charging, temperature, voltage, last_updated)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+    const device = await request.json();
+    
+    // デバイス名を半角に変換
+    if (device.name) {
+      device.name = convertToHalfWidth(device.name);
+    }
+
+    const { results } = await env.DB.prepare(
+      "INSERT INTO devices (uuid, user_id, name, brand, model, model_number, battery_level, last_updated, is_charging, temperature, voltage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
-      crypto.randomUUID(),
+      device.uuid,
       payload.sub,
-      uuid,
-      body.name !== undefined ? body.name : null,
-      body.brand !== undefined ? body.brand : null,
-      body.model !== undefined ? body.model : null,
-      body.os_version !== undefined ? body.os_version : null,
-      body.model_number !== undefined ? body.model_number : null,
-      body.battery_level !== undefined ? body.battery_level : null,
-      body.is_charging !== undefined ? body.is_charging : null,
-      body.temperature !== undefined ? body.temperature : null,
-      body.voltage !== undefined ? body.voltage : null,
-      new Date().toISOString()
+      device.name,
+      device.brand,
+      device.model,
+      device.model_number,
+      device.battery_level,
+      device.last_updated,
+      device.is_charging ? 1 : 0,
+      device.temperature,
+      device.voltage
     ).run();
-    return new Response("デバイス追加完了", { status: 201 });
-  } catch (e) {
-    console.log("handlePostDevice error:", e);
-    return new Response("追加エラー", { status: 400 });
+
+    return new Response(JSON.stringify({ success: true, device }), { status: 201 });
+  } catch (error) {
+    console.error("デバイス作成エラー:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
   }
 }
 
@@ -82,53 +95,48 @@ export async function handlePutDevice(request, env, uuid) {
   return new Response("デバイス更新完了", { status: 200 });
 }
 
-export async function handlePatchDevice(request, env, uuid) {
+export async function handlePatchDevice(request, env) {
   const auth = request.headers.get('Authorization');
   if (!auth || !auth.startsWith('Bearer ')) {
     return new Response('Unauthorized', { status: 401 });
   }
   const token = auth.slice(7);
   const payload = await verifyAuth0JWT(token);
+  
   try {
-    const body = await request.json();
-    const updateFields = [];
-    const bindValues = [];
+    const url = new URL(request.url);
+    const uuid = url.pathname.split('/').pop();
+    const updates = await request.json();
     
-    // 更新可能なフィールドをチェック
-    if (body.name !== undefined) {
-      updateFields.push('name = ?');
-      bindValues.push(body.name);
+    // デバイス名を半角に変換
+    if (updates.name) {
+      updates.name = convertToHalfWidth(updates.name);
     }
-    if (body.brand !== undefined) {
-      updateFields.push('brand = ?');
-      bindValues.push(body.brand);
-    }
-    if (body.model !== undefined) {
-      updateFields.push('model = ?');
-      bindValues.push(body.model);
-    }
-    if (body.model_number !== undefined) {
-      updateFields.push('model_number = ?');
-      bindValues.push(body.model_number);
-    }
+
+    // 更新可能なフィールドのみを許可
+    const allowedFields = ['name', 'brand', 'model', 'model_number'];
+    const updateFields = Object.keys(updates).filter(key => allowedFields.includes(key));
     
     if (updateFields.length === 0) {
-      return new Response("更新するフィールドがありません", { status: 400 });
+      return new Response(JSON.stringify({ error: "No valid fields to update" }), { status: 400 });
     }
-    
-    updateFields.push('last_updated = ?');
-    bindValues.push(new Date().toISOString());
-    bindValues.push(uuid);
-    bindValues.push(payload.sub);
-    
-    await env.DB.prepare(
-      `UPDATE devices SET ${updateFields.join(', ')} WHERE uuid = ? AND user_id = ?`
-    ).bind(...bindValues).run();
-    
-    return new Response("デバイス編集完了", { status: 200 });
-  } catch (e) {
-    console.log("handlePatchDevice error:", e);
-    return new Response("編集エラー", { status: 400 });
+
+    const setClause = updateFields.map(field => `${field} = ?`).join(', ');
+    const values = updateFields.map(field => updates[field]);
+    values.push(uuid, payload.sub);
+
+    const { results } = await env.DB.prepare(
+      `UPDATE devices SET ${setClause} WHERE uuid = ? AND user_id = ?`
+    ).bind(...values).run();
+
+    if (results.changes === 0) {
+      return new Response(JSON.stringify({ error: "Device not found or unauthorized" }), { status: 404 });
+    }
+
+    return new Response(JSON.stringify({ success: true }), { status: 200 });
+  } catch (error) {
+    console.error("デバイス更新エラー:", error);
+    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
   }
 }
 
