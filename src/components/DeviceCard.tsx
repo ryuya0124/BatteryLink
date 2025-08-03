@@ -64,7 +64,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   }, [editOpen, fetchSettings]);
 
   return (
-    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md flex flex-col">
+    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md flex flex-col min-w-64">
       <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2 sm:gap-0">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -102,7 +102,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
           <Button
             variant="outline"
             size="sm"
-            className="h-8 px-2 py-0 flex items-center gap-1 whitespace-nowrap"
+            className="h-8 px-2 py-0 flex items-center gap-1 whitespace-nowrap shrink-0 min-w-fit"
             onClick={() => setEditOpen(true)}
           >
             <Pencil className="w-4 h-4" />
@@ -214,23 +214,23 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
         </div>
 
         {/* アクションボタン */}
-        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 mt-auto">
+        <div className="flex flex-col sm:flex-row gap-2 flex-shrink-0 mt-auto min-w-0">
           <Button
             variant="outline"
             onClick={() => onUpdate(device.uuid)}
             disabled={updating}
-            className="flex-1 min-w-0 h-9 sm:h-8"
+            className="flex-1 min-w-0 h-9 sm:h-8 text-xs sm:text-sm"
           >
-            <RefreshCw className={`w-4 h-4 mr-2 ${updating ? "animate-spin" : ""}`} />
-            {updating ? "更新中..." : "更新"}
+            <RefreshCw className={`w-4 h-4 mr-1 sm:mr-2 ${updating ? "animate-spin" : ""}`} />
+            <span className="truncate">{updating ? "更新中..." : "更新"}</span>
           </Button>
           <Button
             variant="destructive"
             onClick={() => setConfirmDeleteOpen(true)}
-            className="flex-1 min-w-0 h-9 sm:h-8"
+            className="flex-1 min-w-0 h-9 sm:h-8 text-xs sm:text-sm"
           >
             <Trash2 className="w-4 h-4 mr-1" />
-            削除
+            <span className="truncate">削除</span>
           </Button>
         </div>
 

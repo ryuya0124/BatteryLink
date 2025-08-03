@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useDevices } from "../hooks/useDevices";
@@ -17,6 +17,44 @@ import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 import { useFilterSettings } from "@/hooks/useFilterSettings";
 import type { Device } from "../types";
 
+// 動的グリッドカラム数を計算するカスタムフック
+const useDynamicGridColumns = () => {
+  const [columns, setColumns] = useState(1);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const cardMinWidth = 256; // min-w-64 = 256px
+  const gap = 16; // gap-4 = 16px
+
+  useEffect(() => {
+    const updateColumns = () => {
+      if (!containerRef.current) return;
+      
+      const containerWidth = containerRef.current.offsetWidth;
+      const availableWidth = containerWidth - gap; // ギャップ分を引く
+      const maxColumns = Math.floor(availableWidth / (cardMinWidth + gap));
+      
+      // 最小1カラム、最大6カラムに制限
+      const newColumns = Math.max(1, Math.min(6, maxColumns));
+      setColumns(newColumns);
+    };
+
+    updateColumns();
+    
+    const resizeObserver = new ResizeObserver(updateColumns);
+    if (containerRef.current) {
+      resizeObserver.observe(containerRef.current);
+    }
+
+    window.addEventListener('resize', updateColumns);
+    
+    return () => {
+      resizeObserver.disconnect();
+      window.removeEventListener('resize', updateColumns);
+    };
+  }, []);
+
+  return { columns, containerRef };
+};
+
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [showAddDevice, setShowAddDevice] = useState(false);
@@ -31,6 +69,9 @@ export default function DashboardPage() {
   const { authLoadingShown } = useAuthLoading();
   const isGlobalLoading = (isLoading || loading || autoUpdateLoading) && updatingDevices.size === 0 && !manualRefresh;
   const showLoader = useDelayedLoader(isGlobalLoading, authLoadingShown ? 200 : 50);
+  
+  // 動的グリッドカラム数を使用
+  const { columns, containerRef } = useDynamicGridColumns();
 
   // フィルタ設定フックを使用
   const { settings: filterSettings } = useFilterSettings();
@@ -333,8 +374,13 @@ export default function DashboardPage() {
             />
             {/* デバイスカードセクション スクロール可能エリア */}
             <div className="flex-1 overflow-y-auto min-h-0 px-0">
-              <div className="w-full px-0">
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-4 w-full">
+              <div className="w-full px-0" ref={containerRef}>
+                <div 
+                  className="grid gap-4 w-full"
+                  style={{ 
+                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`
+                  }}
+                >
                   {filteredAndSortedDevices.map((device) => (
                     <div key={device.uuid} className="w-full">
                       <DeviceCard
