@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback, useRef } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useDevices } from "../hooks/useDevices";
@@ -10,50 +10,12 @@ import { DeviceFilterSort } from "../components/DeviceFilterSort";
 import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneModels, fetchWithAuth } from "../lib/utils";
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
-import { Header } from "../components/Header";
+import { Layout } from "@/components/Layout";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 import { useFilterSettings } from "@/hooks/useFilterSettings";
 import type { Device } from "../types";
-
-// 動的グリッドカラム数を計算するカスタムフック
-const useDynamicGridColumns = () => {
-  const [columns, setColumns] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const cardMinWidth = 256; // min-w-64 = 256px
-  const gap = 16; // gap-4 = 16px
-
-  useEffect(() => {
-    const updateColumns = () => {
-      if (!containerRef.current) return;
-      
-      const containerWidth = containerRef.current.offsetWidth;
-      const availableWidth = containerWidth - gap; // ギャップ分を引く
-      const maxColumns = Math.floor(availableWidth / (cardMinWidth + gap));
-      
-      // 最小1カラム、最大6カラムに制限
-      const newColumns = Math.max(1, Math.min(6, maxColumns));
-      setColumns(newColumns);
-    };
-
-    updateColumns();
-    
-    const resizeObserver = new ResizeObserver(updateColumns);
-    if (containerRef.current) {
-      resizeObserver.observe(containerRef.current);
-    }
-
-    window.addEventListener('resize', updateColumns);
-    
-    return () => {
-      resizeObserver.disconnect();
-      window.removeEventListener('resize', updateColumns);
-    };
-  }, []);
-
-  return { columns, containerRef };
-};
 
 export default function DashboardPage() {
   const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -69,9 +31,6 @@ export default function DashboardPage() {
   const { authLoadingShown } = useAuthLoading();
   const isGlobalLoading = (isLoading || loading || autoUpdateLoading) && updatingDevices.size === 0 && !manualRefresh;
   const showLoader = useDelayedLoader(isGlobalLoading, authLoadingShown ? 200 : 50);
-  
-  // 動的グリッドカラム数を使用
-  const { columns, containerRef } = useDynamicGridColumns();
 
   // フィルタ設定フックを使用
   const { settings: filterSettings } = useFilterSettings();
@@ -323,13 +282,9 @@ export default function DashboardPage() {
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (
-    <div className="h-screen bg-background text-foreground transition-colors px-4 sm:px-8 lg:px-16 overflow-hidden">
-      <div className="container w-full max-w-full mx-auto px-0 sm:px-1 lg:px-2 py-4 sm:py-8 h-full flex flex-col">
-        <Header 
-          error={error}
-        />
+    <Layout error={error} lockScroll>
         {/* 左右分割 */}
-        <div className="flex flex-col lg:flex-row gap-8 lg:gap-16 flex-1 min-h-0">
+        <div className="h-full flex flex-col lg:flex-row gap-8 lg:gap-16 min-h-0">
           {/* 左カラム: 固定 */}
           <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 px-0">
             <AutoUpdateControl
@@ -350,7 +305,7 @@ export default function DashboardPage() {
             )}
           </div>
           {/* 右カラム: スクロール＋フィルタ上部 */}
-          <div className="w-full lg:w-3/4 flex flex-col min-h-0">
+          <div className="w-full lg:w-3/4 flex flex-col flex-1 min-h-0">
             <div className="flex-shrink-0">
               <DeviceFilterSort
                 phoneModels={phoneModels}
@@ -373,13 +328,10 @@ export default function DashboardPage() {
               onSubmit={handleAddDevice}
             />
             {/* デバイスカードセクション スクロール可能エリア */}
-            <div className="flex-1 overflow-y-auto min-h-0 px-0">
-              <div className="w-full px-0" ref={containerRef}>
+            <div className="flex-1 overflow-y-auto min-h-0 px-0" style={{ scrollbarGutter: 'stable' }}>
+              <div className="w-full px-0">
                 <div 
-                  className="grid gap-4 w-full"
-                  style={{ 
-                    gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))`
-                  }}
+                  className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]"
                 >
                   {filteredAndSortedDevices.map((device) => (
                     <div key={device.uuid} className="w-full">
@@ -406,10 +358,6 @@ export default function DashboardPage() {
             </div>
           </div>
         </div>
-        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full flex-shrink-0">
-          <p>© 2025 BatterySync</p>
-        </footer>
-      </div>
-    </div>
+    </Layout>
   );
 } 
