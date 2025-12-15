@@ -9,8 +9,8 @@ import { useThemeMode } from "@/hooks/useThemeMode";
 import { Label } from "@/components/ui/label";
 import { Layout } from "@/components/Layout";
 
-const LINK_CLAIM = "https://batterysync.net/account_link_candidate";
-const IDENTITIES_CLAIM = "https://batterysync.net/identities";
+const LINK_CLAIM = "https://batt.ryuya-dev.net/account_link_candidate";
+const IDENTITIES_CLAIM = "https://batt.ryuya-dev.net/identities";
 
 export const AccountPage: React.FC = () => {
   const { user, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, logout, getIdTokenClaims } = useAuth0();

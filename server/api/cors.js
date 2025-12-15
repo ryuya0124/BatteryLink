@@ -7,7 +7,7 @@ export function isApiKeyUpdate(request, pathname) {
 }
 
 export function buildCORSHeaders(isApiKeyUpdate) {
-  const allowOrigin = isApiKeyUpdate ? "*" : "https://batterysync.net";
+  const allowOrigin = isApiKeyUpdate ? "*" : "https://batt.ryuya-dev.net";
   return {
     "Access-Control-Allow-Origin": allowOrigin,
     "Access-Control-Allow-Methods": "GET,POST,PUT,DELETE,PATCH,OPTIONS",

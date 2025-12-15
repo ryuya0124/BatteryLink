@@ -51,13 +51,13 @@ exports.onExecutePostLogin = async (event, api) => {
     }
 
     if (sameEmailUsers.length > 0) {
-      api.idToken.setCustomClaim('https://batterysync.net/account_link_candidate', true);
-      api.idToken.setCustomClaim('https://batterysync.net/account_link_candidates', sameEmailUsers.map(u => u.user_id));
+      api.idToken.setCustomClaim('https://batt.ryuya-dev.net/account_link_candidate', true);
+      api.idToken.setCustomClaim('https://batt.ryuya-dev.net/account_link_candidates', sameEmailUsers.map(u => u.user_id));
     }
 
     // identitiesをidTokenに含める（配列で1件以上ある場合のみ）
     if (event.user && Array.isArray(event.user.identities) && event.user.identities.length > 0) {
-      api.idToken.setCustomClaim('https://batterysync.net/identities', event.user.identities);
+      api.idToken.setCustomClaim('https://batt.ryuya-dev.net/identities', event.user.identities);
     }
   } catch (e) {
     console.log('Post Login Action error:', e);

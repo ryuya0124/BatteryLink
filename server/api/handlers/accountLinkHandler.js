@@ -1,8 +1,8 @@
 import { verifyAuth0JWT } from '../utils.js';
 
 // ユーザーJWT検証用
-const AUTH0_DOMAIN = 'auth0.batterysync.net'; // フロントのissuer
-const AUTH0_AUDIENCE = 'https://batterysync.net/'; // フロントのaudience
+const AUTH0_DOMAIN = 'auth0.batt.ryuya-dev.net'; // フロントのissuer
+const AUTH0_AUDIENCE = 'https://batt.ryuya-dev.net/'; // フロントのaudience
 
 // 管理API用audience（トークン取得用）
 const MGMT_API_AUDIENCE = 'https://batterysync.jp.auth0.com/api/v2/';

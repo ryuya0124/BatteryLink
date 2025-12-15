@@ -9,10 +9,9 @@
       "forceConsistentCasingInFileNames": true,
       "target": "ESNext",
       "module": "ESNext",
-      "baseUrl": ".",
       "types": ["vite/client"],
       "paths": {
-        "@/*": ["src/*"]
+        "@/*": ["./src/*"]
       }
     }
   }
