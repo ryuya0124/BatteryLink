@@ -5,6 +5,8 @@
       "moduleResolution": "bundler",
       "esModuleInterop": true,
       "allowSyntheticDefaultImports": true,
+      "strict": true,
+      "forceConsistentCasingInFileNames": true,
       "target": "ESNext",
       "module": "ESNext",
       "baseUrl": ".",
