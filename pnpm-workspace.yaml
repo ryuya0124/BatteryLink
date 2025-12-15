@@ -1,5 +1,6 @@
 onlyBuiltDependencies:
   - '@tailwindcss/oxide'
+  - browser-tabs-lock
   - esbuild
   - sharp
   - workerd
