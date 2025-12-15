@@ -1,7 +1,7 @@
 // server/api/utils.js
 import { jwtVerify, createRemoteJWKSet } from 'jose';
 
-const AUTH0_DOMAIN = 'auth0.batt.ryuya-dev.net'; // 例: dev-xxxxxx.us.auth0.com
+const AUTH0_DOMAIN = 'auth0.ryuya-dev.net'; // 例: dev-xxxxxx.us.auth0.com
 const AUTH0_AUDIENCE = 'https://batt.ryuya-dev.net/';
 const JWKS = createRemoteJWKSet(new URL(`https://${AUTH0_DOMAIN}/.well-known/jwks.json`));
 

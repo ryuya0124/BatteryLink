@@ -12,7 +12,7 @@ function ThemeModeEffect() {
   return null;
 }
 
-const domain = "auth0.batt.ryuya-dev.net";
+const domain = "auth0.ryuya-dev.net";
 const clientId = "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
