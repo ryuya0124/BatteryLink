@@ -9,6 +9,15 @@ import { useThemeMode } from "@/hooks/useThemeMode";
 import { Label } from "@/components/ui/label";
 import { Layout } from "@/components/Layout";
 import { SEO } from "@/components/SEO";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 
 const LINK_CLAIM = "https://batt.ryuya-dev.net/account_link_candidate";
 const IDENTITIES_CLAIM = "https://batt.ryuya-dev.net/identities";
@@ -24,6 +33,10 @@ export const AccountPage: React.FC = () => {
   const [identities, setIdentities] = useState<any[]>([]);
   const [claimsDebug, setClaimsDebug] = useState<any>(null);
   const [theme, setTheme] = useThemeMode();
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState("");
+  const [deleting, setDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
 
   // user.subからプロバイダー情報を抽出するヘルパー
   const extractIdentityFromSub = (sub: string | undefined) => {
@@ -183,6 +196,37 @@ export const AccountPage: React.FC = () => {
     { provider: 'windowslive', label: 'Microsoft' },
   ];
 
+  // アカウント削除処理
+  const handleDeleteAccount = async () => {
+    if (deleteConfirmText !== "削除する") {
+      setDeleteError("確認テキストが一致しません");
+      return;
+    }
+    
+    setDeleting(true);
+    setDeleteError(null);
+    
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch('/api/auth/account', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      
+      if (res.ok) {
+        // 削除成功後、ログアウトしてトップページへ
+        logout({ logoutParams: { returnTo: window.location.origin } });
+      } else {
+        const err = await res.json().catch(() => ({}));
+        setDeleteError(err.error || "アカウントの削除に失敗しました");
+      }
+    } catch (e: any) {
+      setDeleteError(e?.message || "エラーが発生しました");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   if (isLoading) return <FullScreenLoader label="アカウント情報を取得中..." />;
   if (!isAuthenticated) return null;
 
@@ -292,7 +336,76 @@ export const AccountPage: React.FC = () => {
                 <Label htmlFor="theme-switch">ダークモード</Label>
               </div>
             </div>
+            
+            {/* 危険な操作セクション */}
+            <div className="mt-8 border-t pt-6">
+              <h3 className="font-bold mb-2 text-red-600 dark:text-red-400">危険な操作</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                アカウントを削除すると、すべてのデータ（デバイス、APIキー、設定など）が完全に削除されます。この操作は取り消せません。
+              </p>
+              <Button 
+                variant="destructive" 
+                onClick={() => {
+                  setDeleteDialogOpen(true);
+                  setDeleteConfirmText("");
+                  setDeleteError(null);
+                }}
+              >
+                アカウントを削除
+              </Button>
+            </div>
       </div>
+      
+      {/* アカウント削除確認ダイアログ */}
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="text-red-600 dark:text-red-400">アカウントの削除</DialogTitle>
+            <DialogDescription>
+              この操作は取り消すことができません。すべてのデータが完全に削除されます。
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <p className="text-sm mb-4">
+              削除されるデータ:
+            </p>
+            <ul className="list-disc list-inside text-sm text-muted-foreground mb-4 space-y-1">
+              <li>登録されたすべてのデバイス</li>
+              <li>すべてのAPIキー</li>
+              <li>表示設定</li>
+              <li>Auth0のアカウント情報</li>
+            </ul>
+            <p className="text-sm mb-2">
+              続行するには、下のフィールドに「<span className="font-bold text-red-600 dark:text-red-400">削除する</span>」と入力してください。
+            </p>
+            <Input
+              value={deleteConfirmText}
+              onChange={(e) => setDeleteConfirmText(e.target.value)}
+              placeholder="削除する"
+              className="mt-2"
+            />
+            {deleteError && (
+              <p className="text-red-500 text-sm mt-2">{deleteError}</p>
+            )}
+          </div>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setDeleteDialogOpen(false)}
+              disabled={deleting}
+            >
+              キャンセル
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleDeleteAccount}
+              disabled={deleting || deleteConfirmText !== "削除する"}
+            >
+              {deleting ? "削除中..." : "アカウントを完全に削除"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Layout>
   );
 }; 

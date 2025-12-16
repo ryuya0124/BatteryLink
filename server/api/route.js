@@ -4,6 +4,7 @@ import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiK
 import { handleMe, handleAutoUpdate, handleDeviceDisplaySettings, handleIdentities } from "./handlers/meHandler.js";
 import { corsMiddleware } from "./cors.js";
 import { handleAccountLink } from "./handlers/accountLinkHandler.js";
+import { handleDeleteAccount } from "./handlers/accountDeleteHandler.js";
 
 const api = new Hono();
 
@@ -67,6 +68,11 @@ api.get("/auth/device-display-settings", async (c) => {
 });
 api.patch("/auth/device-display-settings", async (c) => {
   return handleDeviceDisplaySettings(c.req.raw, c.env);
+});
+
+// アカウント削除API
+api.delete("/auth/account", async (c) => {
+  return handleDeleteAccount(c.req.raw, c.env);
 });
 
 export default api;
