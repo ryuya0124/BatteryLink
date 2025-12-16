@@ -3,7 +3,7 @@ import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
-import { FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaMicrosoft } from "react-icons/fa";
+import { FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaMicrosoft, FaAmazon, FaDiscord } from "react-icons/fa";
 import { Switch } from "@/components/ui/switch";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { Label } from "@/components/ui/label";
@@ -45,7 +45,7 @@ export const AccountPage: React.FC = () => {
     return {
       provider,
       user_id: userId,
-      isSocial: ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive'].includes(provider)
+      isSocial: ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive', 'amazon', 'discord'].includes(provider)
     };
   };
 
@@ -194,6 +194,8 @@ export const AccountPage: React.FC = () => {
     { provider: 'github', label: 'GitHub' },
     { provider: 'apple', label: 'Apple' },
     { provider: 'windowslive', label: 'Microsoft' },
+    { provider: 'amazon', label: 'Amazon' },
+    { provider: 'discord', label: 'Discord' },
   ];
 
   // アカウント削除処理
@@ -253,7 +255,9 @@ export const AccountPage: React.FC = () => {
                       {id.provider === 'github' && <FaGithub className="text-black dark:text-gray-200" />}
                       {id.provider === 'apple' && <FaApple className="text-black dark:text-gray-200" />}
                       {id.provider === 'windowslive' && <FaMicrosoft className="text-[#00A4EF] dark:text-[#8ab4f8]" />}
-                      {!['google-oauth2','facebook','twitter','github','apple','windowslive'].includes(id.provider) && id.provider.charAt(0).toUpperCase()}
+                      {id.provider === 'amazon' && <FaAmazon className="text-[#FF9900] dark:text-[#ffb84d]" />}
+                      {id.provider === 'discord' && <FaDiscord className="text-[#5865F2] dark:text-[#8a94f7]" />}
+                      {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.provider) && id.provider.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-foreground">
@@ -263,7 +267,9 @@ export const AccountPage: React.FC = () => {
                         {id.provider === 'github' && 'GitHub'}
                         {id.provider === 'apple' && 'Apple'}
                         {id.provider === 'windowslive' && 'Microsoft'}
-                        {!['google-oauth2','facebook','twitter','github','apple','windowslive'].includes(id.provider) && id.provider}
+                        {id.provider === 'amazon' && 'Amazon'}
+                        {id.provider === 'discord' && 'Discord'}
+                        {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.provider) && id.provider}
                       </div>
                       <div className="flex gap-2 flex-wrap mt-1">
                         {idx === 0 && <span className="px-2 py-0.5 text-xs rounded bg-blue-600 text-white">メイン</span>}
@@ -291,6 +297,8 @@ export const AccountPage: React.FC = () => {
                       else if (p.provider === 'github') { Icon = FaGithub; btnClass = "bg-black dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white"; }
                       else if (p.provider === 'apple') { Icon = FaApple; btnClass = "bg-black dark:bg-gray-700 hover:bg-gray-800 dark:hover:bg-gray-600 text-white"; }
                       else if (p.provider === 'windowslive') { Icon = FaMicrosoft; btnClass = "bg-[#00A4EF] dark:bg-[#1a2a3a] hover:bg-[#0078d4] dark:hover:bg-[#22334a] text-white"; }
+                      else if (p.provider === 'amazon') { Icon = FaAmazon; btnClass = "bg-[#FF9900] dark:bg-[#1a2a3a] hover:bg-[#e68a00] dark:hover:bg-[#22334a] text-white"; }
+                      else if (p.provider === 'discord') { Icon = FaDiscord; btnClass = "bg-[#5865F2] dark:bg-[#1a2a3a] hover:bg-[#4752c4] dark:hover:bg-[#22334a] text-white"; }
                       else { btnClass = "bg-gray-400 dark:bg-gray-700 hover:bg-gray-500 dark:hover:bg-gray-600 text-white"; }
                       return (
                         <Button
