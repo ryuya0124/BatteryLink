@@ -38,14 +38,20 @@ export const AccountPage: React.FC = () => {
   const [deleting, setDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
 
-  // user.subからプロバイダー情報を抽出するヘルパー
+  // user.subからプロバイダー情報を抽出するヘルパー（oauth2|discord|xxx に対応）
   const extractIdentityFromSub = (sub: string | undefined) => {
     if (!sub) return null;
-    const [provider, userId] = sub.split('|');
+    const parts = sub.split('|');
+    const provider = parts[0];
+    const user_id = parts.slice(1).join('|');
+    const socialProviders = ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive', 'amazon', 'discord'];
+    const isDiscordViaOauth2 = provider === 'oauth2' && user_id.startsWith('discord|');
+    const isAmazonViaOauth2 = provider === 'oauth2' && user_id.startsWith('amazon|');
+    const normalizedProvider = isDiscordViaOauth2 ? 'discord' : isAmazonViaOauth2 ? 'amazon' : provider;
     return {
       provider,
-      user_id: userId,
-      isSocial: ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive', 'amazon', 'discord'].includes(provider)
+      user_id,
+      isSocial: socialProviders.includes(normalizedProvider)
     };
   };
 
@@ -198,6 +204,17 @@ export const AccountPage: React.FC = () => {
     { provider: 'discord', label: 'Discord' },
   ];
 
+  // Auth0のgeneric oauth2コネクションはproviderがoauth2になるため、user_idで実際のプロバイダを判定
+  const normalizeProvider = (identity: any) => {
+    if (!identity) return '';
+    const { provider, user_id } = identity;
+    if (provider === 'oauth2' && typeof user_id === 'string') {
+      if (user_id.startsWith('discord|')) return 'discord';
+      if (user_id.startsWith('amazon|')) return 'amazon';
+    }
+    return provider;
+  };
+
   // アカウント削除処理
   const handleDeleteAccount = async () => {
     if (deleteConfirmText !== "削除する") {
@@ -232,8 +249,14 @@ export const AccountPage: React.FC = () => {
   if (isLoading) return <FullScreenLoader label="アカウント情報を取得中..." />;
   if (!isAuthenticated) return null;
 
+  const normalizedIdentities = identities.map((id: any) => ({
+    ...id,
+    providerKey: normalizeProvider(id),
+    isSocial: id.isSocial || ['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(normalizeProvider(id))
+  }));
+
   // Google連携済み判定（例）
-  const isGoogleLinked = identities.some((id: any) => id.provider === 'google-oauth2');
+  const isGoogleLinked = normalizedIdentities.some((id: any) => id.providerKey === 'google-oauth2');
   const shouldShowLinkButton = hasLinkCandidate && !isGoogleLinked;
 
   return (
@@ -246,30 +269,30 @@ export const AccountPage: React.FC = () => {
               <div className="mb-2 text-muted-foreground"><b>名前:</b> {user?.name}</div>
               <div className="mb-4 text-muted-foreground"><b>連携済みアカウント:</b></div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
-                {identities.map((id: any, idx: number) => (
-                  <div key={id.provider} className="flex items-center gap-3 p-3 border rounded shadow-sm bg-gray-50 dark:bg-muted">
+                {normalizedIdentities.map((id: any, idx: number) => (
+                  <div key={`${id.provider}-${id.user_id || idx}`} className="flex items-center gap-3 p-3 border rounded shadow-sm bg-gray-50 dark:bg-muted">
                     <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-2xl">
-                      {id.provider === 'google-oauth2' && <FaGoogle className="text-[#4285F4] dark:text-[#8ab4f8]" />}
-                      {id.provider === 'facebook' && <FaFacebook className="text-[#1877F3] dark:text-[#8ab4f8]" />}
-                      {id.provider === 'twitter' && <FaTwitter className="text-[#1DA1F2] dark:text-[#8ab4f8]" />}
-                      {id.provider === 'github' && <FaGithub className="text-black dark:text-gray-200" />}
-                      {id.provider === 'apple' && <FaApple className="text-black dark:text-gray-200" />}
-                      {id.provider === 'windowslive' && <FaMicrosoft className="text-[#00A4EF] dark:text-[#8ab4f8]" />}
-                      {id.provider === 'amazon' && <FaAmazon className="text-[#FF9900] dark:text-[#ffb84d]" />}
-                      {id.provider === 'discord' && <FaDiscord className="text-[#5865F2] dark:text-[#8a94f7]" />}
-                      {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.provider) && id.provider.charAt(0).toUpperCase()}
+                      {id.providerKey === 'google-oauth2' && <FaGoogle className="text-[#4285F4] dark:text-[#8ab4f8]" />}
+                      {id.providerKey === 'facebook' && <FaFacebook className="text-[#1877F3] dark:text-[#8ab4f8]" />}
+                      {id.providerKey === 'twitter' && <FaTwitter className="text-[#1DA1F2] dark:text-[#8ab4f8]" />}
+                      {id.providerKey === 'github' && <FaGithub className="text-black dark:text-gray-200" />}
+                      {id.providerKey === 'apple' && <FaApple className="text-black dark:text-gray-200" />}
+                      {id.providerKey === 'windowslive' && <FaMicrosoft className="text-[#00A4EF] dark:text-[#8ab4f8]" />}
+                      {id.providerKey === 'amazon' && <FaAmazon className="text-[#FF9900] dark:text-[#ffb84d]" />}
+                      {id.providerKey === 'discord' && <FaDiscord className="text-[#5865F2] dark:text-[#8a94f7]" />}
+                      {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.providerKey) && id.providerKey.charAt(0).toUpperCase()}
                     </div>
                     <div className="flex-1">
                       <div className="font-semibold text-foreground">
-                        {id.provider === 'google-oauth2' && 'Google'}
-                        {id.provider === 'facebook' && 'Facebook'}
-                        {id.provider === 'twitter' && 'Twitter'}
-                        {id.provider === 'github' && 'GitHub'}
-                        {id.provider === 'apple' && 'Apple'}
-                        {id.provider === 'windowslive' && 'Microsoft'}
-                        {id.provider === 'amazon' && 'Amazon'}
-                        {id.provider === 'discord' && 'Discord'}
-                        {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.provider) && id.provider}
+                        {id.providerKey === 'google-oauth2' && 'Google'}
+                        {id.providerKey === 'facebook' && 'Facebook'}
+                        {id.providerKey === 'twitter' && 'Twitter'}
+                        {id.providerKey === 'github' && 'GitHub'}
+                        {id.providerKey === 'apple' && 'Apple'}
+                        {id.providerKey === 'windowslive' && 'Microsoft'}
+                        {id.providerKey === 'amazon' && 'Amazon'}
+                        {id.providerKey === 'discord' && 'Discord'}
+                        {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.providerKey) && id.providerKey}
                       </div>
                       <div className="flex gap-2 flex-wrap mt-1">
                         {idx === 0 && <span className="px-2 py-0.5 text-xs rounded bg-blue-600 text-white">メイン</span>}
@@ -284,11 +307,11 @@ export const AccountPage: React.FC = () => {
             </div>
             <div className="flex flex-col gap-4">
               {/** 未リンクのSNSのみ連携ボタン表示 */}
-              {SOCIAL_PROVIDERS.filter(p => !identities.some((id: any) => id.provider === p.provider)).length > 0 && (
+              {SOCIAL_PROVIDERS.filter(p => !normalizedIdentities.some((id: any) => id.providerKey === p.provider)).length > 0 && (
                 <div className="border rounded p-4 bg-blue-50 dark:bg-muted">
                   <div className="mb-2 font-bold text-blue-700 dark:text-blue-300">未リンクのSNSアカウントと連携できます。</div>
                   <div className="flex flex-wrap gap-2 mb-2">
-                    {SOCIAL_PROVIDERS.filter(p => !identities.some((id: any) => id.provider === p.provider)).map(p => {
+                    {SOCIAL_PROVIDERS.filter(p => !normalizedIdentities.some((id: any) => id.providerKey === p.provider)).map(p => {
                       let Icon: any = null;
                       let btnClass = "";
                       if (p.provider === 'google-oauth2') { Icon = FaGoogle; btnClass = "bg-[#4285F4] dark:bg-[#1a2a3a] hover:bg-[#357ae8] dark:hover:bg-[#22334a] text-white"; }

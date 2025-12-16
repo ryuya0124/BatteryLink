@@ -42,8 +42,13 @@ export async function handleAccountLink(request, env) {
       return new Response(JSON.stringify({ error: '同じアカウントはリンクできません。別のアカウントでログインしてください。' }), { status: 400 });
     }
 
-    const [linkProvider, link_user_id] = linkUserId.split('|');
+    const [linkProvider, ...linkRest] = linkUserId.split('|');
     const [mainProvider] = mainUserId.split('|');
+    const link_user_id = linkRest.join('|');
+
+    if (!linkProvider || !link_user_id) {
+      return new Response(JSON.stringify({ error: 'リンク元のIDが不正です' }), { status: 400 });
+    }
 
     // 同じプロバイダー同士のリンクチェック
     if (mainProvider === linkProvider) {
@@ -62,7 +67,7 @@ export async function handleAccountLink(request, env) {
     if (userRes.ok) {
       const userData = await userRes.json();
       const existingIdentities = userData.identities || [];
-      const alreadyLinked = existingIdentities.some(id => id.provider === linkProvider);
+      const alreadyLinked = existingIdentities.some(id => id.provider === linkProvider && id.user_id === link_user_id);
       if (alreadyLinked) {
         return new Response(JSON.stringify({ error: `${getProviderDisplayName(linkProvider)}は既に連携済みです。` }), { status: 400 });
       }
@@ -101,6 +106,8 @@ function getProviderDisplayName(provider) {
     'github': 'GitHub',
     'apple': 'Apple',
     'windowslive': 'Microsoft',
+    'amazon': 'Amazon',
+    'discord': 'Discord',
     'auth0': 'メール/パスワード'
   };
   return names[provider] || provider;
