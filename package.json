@@ -8,7 +8,7 @@
 		"build": "vite build",
 		"lint": "eslint .",
 		"preview": "pnpm build && vite preview",
-		"deploy": "pnpm build && wrangler deploy"
+		"dep": "pnpm build && wrangler deploy"
 	},
 	"dependencies": {
 		"@auth0/auth0-react": "^2.11.0",
@@ -24,6 +24,7 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.23.26",
+		"hono": "^4.11.1",
 		"jose": "^6.1.3",
 		"lucide-react": "^0.561.0",
 		"react": "^19.2.3",

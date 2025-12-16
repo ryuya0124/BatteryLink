@@ -1,76 +1,72 @@
-import { verifyApiKeyAndUuid } from "./utils.js";
+import { Hono } from "hono";
 import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice, handlePatchDevice } from "./handlers/deviceHandlers.js";
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
 import { handleMe, handleAutoUpdate, handleDeviceDisplaySettings, handleIdentities } from "./handlers/meHandler.js";
-import { isApiKeyUpdate, withCORS, handlePreflight } from "./cors.js";
+import { corsMiddleware } from "./cors.js";
 import { handleAccountLink } from "./handlers/accountLinkHandler.js";
 
-export default {
-  async fetch(request, env, ctx) {
-    const url = new URL(request.url);
-    const { pathname } = url;
-    const apiKeyUpdate = isApiKeyUpdate(request, pathname);
+const api = new Hono();
 
-    // CORSプリフライト対応
-    if (request.method === "OPTIONS") {
-      return handlePreflight(apiKeyUpdate);
-    }
+// CORSミドルウェアを適用
+api.use("*", corsMiddleware);
 
-    if (pathname === "/api/link-account" && request.method === "POST") {
-      return withCORS(await handleAccountLink(request, env), apiKeyUpdate);
-    }
+// アカウントリンクAPI
+api.post("/link-account", async (c) => {
+  return handleAccountLink(c.req.raw, c.env);
+});
 
-    // デバイスAPI
-    if (pathname === "/api/devices" && request.method === "GET") {
-      return withCORS(await handleGetDevices(request, env), apiKeyUpdate);
-    }
-    if (pathname === "/api/devices" && request.method === "POST") {
-      return withCORS(await handlePostDevice(request, env), apiKeyUpdate);
-    }
-    if (pathname.startsWith("/api/devices/") && request.method === "PUT") {
-      const uuid = decodeURIComponent(pathname.split("/api/devices/")[1]);
-      console.log("UUID:" + uuid)
-      return withCORS(await handlePutDevice(request, env, uuid), apiKeyUpdate);
-    }
-    if (pathname.startsWith("/api/devices/") && request.method === "DELETE") {
-      const uuid = decodeURIComponent(pathname.split("/api/devices/")[1]);
-      return withCORS(await handleDeleteDevice(request, env, uuid), apiKeyUpdate);
-    }
-    if (pathname.startsWith("/api/devices/") && request.method === "PATCH") {
-      const uuid = decodeURIComponent(pathname.split("/api/devices/")[1]);
-      return withCORS(await handlePatchDevice(request, env, uuid), apiKeyUpdate);
-    }
+// デバイスAPI
+api.get("/devices", async (c) => {
+  return handleGetDevices(c.req.raw, c.env);
+});
+api.post("/devices", async (c) => {
+  return handlePostDevice(c.req.raw, c.env);
+});
+api.put("/devices/:uuid", async (c) => {
+  const uuid = c.req.param("uuid");
+  console.log("UUID:" + uuid);
+  return handlePutDevice(c.req.raw, c.env, uuid);
+});
+api.delete("/devices/:uuid", async (c) => {
+  const uuid = c.req.param("uuid");
+  return handleDeleteDevice(c.req.raw, c.env, uuid);
+});
+api.patch("/devices/:uuid", async (c) => {
+  const uuid = c.req.param("uuid");
+  return handlePatchDevice(c.req.raw, c.env, uuid);
+});
 
-    // APIキーAPI
-    if (pathname === "/api/api-keys" && request.method === "GET") {
-      return withCORS(await handleGetApiKeys(request, env), apiKeyUpdate);
-    }
-    if (pathname === "/api/api-keys" && request.method === "POST") {
-      return withCORS(await handlePostApiKey(request, env), apiKeyUpdate);
-    }
-    if (pathname.startsWith("/api/api-keys/") && request.method === "DELETE") {
-      const id = decodeURIComponent(pathname.split("/api/api-keys/")[1]);
-      return withCORS(await handleDeleteApiKey(request, env, id), apiKeyUpdate);
-    }
-    if (pathname.startsWith("/api/api-keys/") && request.method === "PATCH") {
-      const id = decodeURIComponent(pathname.split("/api/api-keys/")[1]);
-      return withCORS(await handlePatchApiKey(request, env, id), apiKeyUpdate);
-    }
+// APIキーAPI
+api.get("/api-keys", async (c) => {
+  return handleGetApiKeys(c.req.raw, c.env);
+});
+api.post("/api-keys", async (c) => {
+  return handlePostApiKey(c.req.raw, c.env);
+});
+api.delete("/api-keys/:id", async (c) => {
+  const id = c.req.param("id");
+  return handleDeleteApiKey(c.req.raw, c.env, id);
+});
+api.patch("/api-keys/:id", async (c) => {
+  const id = c.req.param("id");
+  return handlePatchApiKey(c.req.raw, c.env, id);
+});
 
-    // 認証API
-    if (pathname === "/api/auth/me" && request.method === "GET") {
-      return withCORS(await handleMe(request, env), apiKeyUpdate);
-    }
-    if (pathname === "/api/auth/identities" && request.method === "GET") {
-      return withCORS(await handleIdentities(request, env), apiKeyUpdate);
-    }
-    if (pathname === "/api/auth/auto-update" && request.method === "PATCH") {
-      return withCORS(await handleAutoUpdate(request, env), apiKeyUpdate);
-    }
-    if (pathname === "/api/auth/device-display-settings" && (request.method === "GET" || request.method === "PATCH")) {
-      return withCORS(await handleDeviceDisplaySettings(request, env), apiKeyUpdate);
-    }
+// 認証API
+api.get("/auth/me", async (c) => {
+  return handleMe(c.req.raw, c.env);
+});
+api.get("/auth/identities", async (c) => {
+  return handleIdentities(c.req.raw, c.env);
+});
+api.patch("/auth/auto-update", async (c) => {
+  return handleAutoUpdate(c.req.raw, c.env);
+});
+api.get("/auth/device-display-settings", async (c) => {
+  return handleDeviceDisplaySettings(c.req.raw, c.env);
+});
+api.patch("/auth/device-display-settings", async (c) => {
+  return handleDeviceDisplaySettings(c.req.raw, c.env);
+});
 
-    return new Response("Not Found", { status: 404 });
-  },
-};
+export default api;
