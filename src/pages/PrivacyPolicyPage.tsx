@@ -18,7 +18,7 @@ export default function PrivacyPolicyPage() {
         <h1 className="text-3xl sm:text-4xl font-bold mb-8">プライバシーポリシー</h1>
         
         <div className="prose prose-neutral dark:prose-invert max-w-none space-y-6">
-          <p className="text-muted-foreground">最終更新日: 2025年1月1日</p>
+          <p className="text-muted-foreground">最終更新日: 2025年12月17日</p>
 
           <section className="space-y-4">
             <h2 className="text-xl sm:text-2xl font-semibold">1. はじめに</h2>
