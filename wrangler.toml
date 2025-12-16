@@ -1,0 +1,33 @@
+name = "batterysync"
+main = "server/index.js"
+compatibility_date = "2025-12-15"
+account_id = "9df138cc6e3f2aee3531fd5aaa9e7b61"
+workers_dev = false
+
+[assets]
+directory = "dist"
+not_found_handling = "single-page-application"
+
+[observability]
+enabled = true
+
+[vars]
+
+routes = [
+  "!auth0.ryuya-dev.net/*",
+  "batt.ryuya-dev.net/*",
+  "!batt.ryuya-dev.net/cdn-cgi/*" # これで除外
+]
+
+[[r2_buckets]]
+binding = "R2"         # JavaScript側で使うバインディング名
+bucket_name = "batterysync" # R2バケット名
+
+[[kv_namespaces]]
+binding = "KV"
+id = "469ca4549fcf44278f27283adc385b1a"
+
+[[d1_databases]]
+binding = "DB"  # JavaScript側でこの名前でデータベースにアクセスします
+database_name = "batterylink"  # 作成したデータベース名
+database_id = "7a7d34b9-a191-4aca-804c-c6347a44d9b1"  # 作成されたデータベースのID
