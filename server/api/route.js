@@ -1,7 +1,7 @@
 import { verifyApiKeyAndUuid } from "./utils.js";
 import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice, handlePatchDevice } from "./handlers/deviceHandlers.js";
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
-import { handleMe, handleAutoUpdate, handleDeviceDisplaySettings } from "./handlers/meHandler.js";
+import { handleMe, handleAutoUpdate, handleDeviceDisplaySettings, handleIdentities } from "./handlers/meHandler.js";
 import { isApiKeyUpdate, withCORS, handlePreflight } from "./cors.js";
 import { handleAccountLink } from "./handlers/accountLinkHandler.js";
 
@@ -60,6 +60,9 @@ export default {
     // 認証API
     if (pathname === "/api/auth/me" && request.method === "GET") {
       return withCORS(await handleMe(request, env), apiKeyUpdate);
+    }
+    if (pathname === "/api/auth/identities" && request.method === "GET") {
+      return withCORS(await handleIdentities(request, env), apiKeyUpdate);
     }
     if (pathname === "/api/auth/auto-update" && request.method === "PATCH") {
       return withCORS(await handleAutoUpdate(request, env), apiKeyUpdate);

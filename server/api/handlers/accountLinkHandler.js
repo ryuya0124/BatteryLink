@@ -34,27 +34,74 @@ export async function handleAccountLink(request, env) {
     if (originalPayload.email !== linkPayload.email) {
       return new Response(JSON.stringify({ error: 'メールアドレスが一致しません' }), { status: 400 });
     }
-    const mgmtToken = await getManagementApiToken(env);
-    console.log('mgmtToken', mgmtToken);
     const mainUserId = originalPayload.sub;
     const linkUserId = linkPayload.sub;
-    const [provider, user_id] = linkUserId.split('|');
-    const res = await fetch(`https://${AUTH0_DOMAIN}/api/v2/users/${mainUserId}/identities`, {
+
+    // 同一アカウントチェック
+    if (mainUserId === linkUserId) {
+      return new Response(JSON.stringify({ error: '同じアカウントはリンクできません。別のアカウントでログインしてください。' }), { status: 400 });
+    }
+
+    const [linkProvider, link_user_id] = linkUserId.split('|');
+    const [mainProvider] = mainUserId.split('|');
+
+    // 同じプロバイダー同士のリンクチェック
+    if (mainProvider === linkProvider) {
+      return new Response(JSON.stringify({ error: `既に${getProviderDisplayName(linkProvider)}でログインしています。別のプロバイダーのアカウントを連携してください。` }), { status: 400 });
+    }
+
+    const mgmtToken = await getManagementApiToken(env);
+    console.log('mgmtToken', mgmtToken);
+
+    // 既存のidentitiesを取得して、既にリンク済みか確認
+    const userRes = await fetch(`https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(mainUserId)}?fields=identities`, {
+      headers: {
+        Authorization: `Bearer ${mgmtToken}`
+      }
+    });
+    if (userRes.ok) {
+      const userData = await userRes.json();
+      const existingIdentities = userData.identities || [];
+      const alreadyLinked = existingIdentities.some(id => id.provider === linkProvider);
+      if (alreadyLinked) {
+        return new Response(JSON.stringify({ error: `${getProviderDisplayName(linkProvider)}は既に連携済みです。` }), { status: 400 });
+      }
+    }
+
+    const res = await fetch(`https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(mainUserId)}/identities`, {
       method: 'POST',
       headers: {
         Authorization: `Bearer ${mgmtToken}`,
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ provider, user_id })
+      body: JSON.stringify({ provider: linkProvider, user_id: link_user_id })
     });
     if (res.ok) {
       return new Response(JSON.stringify({ success: true }), { status: 200 });
     } else {
-      const err = await res.text();
-      return new Response(JSON.stringify({ error: err }), { status: 500 });
+      const err = await res.json().catch(() => ({}));
+      // Auth0のエラーメッセージを日本語に変換
+      if (err.message?.includes('Main identity and the new one are the same')) {
+        return new Response(JSON.stringify({ error: '同じアカウントはリンクできません。' }), { status: 400 });
+      }
+      return new Response(JSON.stringify({ error: err.message || 'リンクに失敗しました' }), { status: 500 });
     }
   } catch (e) {
     console.error('accountLink error', e, typeof e, JSON.stringify(e));
     return new Response(JSON.stringify({ error: e && e.message ? e.message : String(e) }), { status: 500 });
   }
+}
+
+// プロバイダー名を日本語表示名に変換
+function getProviderDisplayName(provider) {
+  const names = {
+    'google-oauth2': 'Google',
+    'facebook': 'Facebook',
+    'twitter': 'Twitter',
+    'github': 'GitHub',
+    'apple': 'Apple',
+    'windowslive': 'Microsoft',
+    'auth0': 'メール/パスワード'
+  };
+  return names[provider] || provider;
 } 

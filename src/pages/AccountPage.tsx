@@ -24,22 +24,70 @@ export const AccountPage: React.FC = () => {
   const [claimsDebug, setClaimsDebug] = useState<any>(null);
   const [theme, setTheme] = useThemeMode();
 
-  // クレームを読み込み（自動）
+  // user.subからプロバイダー情報を抽出するヘルパー
+  const extractIdentityFromSub = (sub: string | undefined) => {
+    if (!sub) return null;
+    const [provider, userId] = sub.split('|');
+    return {
+      provider,
+      user_id: userId,
+      isSocial: ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive'].includes(provider)
+    };
+  };
+
+  // APIからidentitiesを取得
+  const fetchIdentitiesFromApi = async () => {
+    try {
+      const token = await getAccessTokenSilently();
+      const res = await fetch('/api/auth/identities', {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data.identities || [];
+      }
+    } catch (e) {
+      console.error('Failed to fetch identities from API:', e);
+    }
+    return null;
+  };
+
+  // identitiesを読み込み（自動）
   useEffect(() => {
-    const loadClaims = async () => {
+    const loadIdentities = async () => {
       try {
+        // まずAPIからidentitiesを取得（正確なデータ）
+        const apiIdentities = await fetchIdentitiesFromApi();
+        if (apiIdentities && apiIdentities.length > 0) {
+          setIdentities(apiIdentities);
+        } else {
+          // フォールバック: user.subから取得
+          if (user?.sub) {
+            const mainIdentity = extractIdentityFromSub(user.sub);
+            if (mainIdentity) {
+              setIdentities([mainIdentity]);
+            }
+          }
+        }
+
+        // クレームも読み込み（リンク候補の確認用）
         const claims = await getIdTokenClaims();
         setClaimsDebug(claims);
         setHasLinkCandidate(!!(claims && (claims as any)[LINK_CLAIM]));
-        setIdentities(((claims && (claims as any)[IDENTITIES_CLAIM]) as any[]) || []);
       } catch (e) {
-        // 取得失敗は無視（未ログインなど）
+        // 取得失敗時のフォールバック
+        if (user?.sub) {
+          const mainIdentity = extractIdentityFromSub(user.sub);
+          if (mainIdentity) {
+            setIdentities([mainIdentity]);
+          }
+        }
       }
     };
     if (isAuthenticated) {
-      loadClaims();
+      loadIdentities();
     }
-  }, [isAuthenticated, getIdTokenClaims]);
+  }, [isAuthenticated, getAccessTokenSilently, getIdTokenClaims, user?.sub]);
 
   // リダイレクト復帰後のリンク処理
   useEffect(() => {
@@ -68,11 +116,22 @@ export const AccountPage: React.FC = () => {
           });
           if (res.ok) {
             setLinkSuccess(true);
-            // 成功したらクレームを再取得
+            
+            // APIから最新のidentitiesを取得
+            const apiIdentities = await fetchIdentitiesFromApi();
+            if (apiIdentities && apiIdentities.length > 0) {
+              setIdentities(apiIdentities);
+            }
+            
+            // クレームも更新
             const claims = await getIdTokenClaims();
             setClaimsDebug(claims);
             setHasLinkCandidate(!!(claims && (claims as any)[LINK_CLAIM]));
-            setIdentities(((claims && (claims as any)[IDENTITIES_CLAIM]) as any[]) || []);
+            
+            // 2秒後にページをリロードして最新の状態を取得
+            setTimeout(() => {
+              window.location.href = '/account';
+            }, 2000);
           } else {
             const err = await res.json().catch(() => ({}));
             setLinkError(err.error || "リンクに失敗しました");

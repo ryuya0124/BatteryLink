@@ -1,5 +1,24 @@
 import { verifyAuth0JWT } from '../utils.js';
 
+// Auth0設定
+const AUTH0_DOMAIN = 'auth0.ryuya-dev.net';
+const MGMT_API_AUDIENCE = 'https://batterysync.jp.auth0.com/api/v2/';
+
+async function getManagementApiToken(env) {
+  const res = await fetch(`https://${AUTH0_DOMAIN}/oauth/token`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      grant_type: 'client_credentials',
+      client_id: env.MGMT_CLIENT_ID,
+      client_secret: env.MGMT_CLIENT_SECRET,
+      audience: MGMT_API_AUDIENCE
+    })
+  });
+  const data = await res.json();
+  return data.access_token;
+}
+
 export async function handleMe(request, env) {
   const auth = request.headers.get('Authorization');
   if (!auth || !auth.startsWith('Bearer ')) {
@@ -12,6 +31,50 @@ export async function handleMe(request, env) {
   ).bind(payload.sub).all();
   const auto_update = results.length ? Boolean(results[0].auto_update) : false;
   return new Response(JSON.stringify({ id: payload.sub, auto_update }), { status: 200, headers: { "Content-Type": "application/json" } });
+}
+
+// Auth0 Management APIからユーザーのidentitiesを取得
+export async function handleIdentities(request, env) {
+  try {
+    const auth = request.headers.get('Authorization');
+    if (!auth || !auth.startsWith('Bearer ')) {
+      return new Response('Unauthorized', { status: 401 });
+    }
+    const token = auth.slice(7);
+    const payload = await verifyAuth0JWT(token);
+    const userId = payload.sub;
+
+    // Management APIトークンを取得
+    const mgmtToken = await getManagementApiToken(env);
+    if (!mgmtToken) {
+      return new Response(JSON.stringify({ error: 'Failed to get management token' }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+
+    // Auth0からユーザー情報を取得
+    const userRes = await fetch(`https://${AUTH0_DOMAIN}/api/v2/users/${encodeURIComponent(userId)}?fields=identities`, {
+      headers: {
+        Authorization: `Bearer ${mgmtToken}`
+      }
+    });
+
+    if (!userRes.ok) {
+      const err = await userRes.text();
+      console.log('Failed to get user identities:', err);
+      return new Response(JSON.stringify({ error: 'Failed to get identities' }), { status: 500, headers: { "Content-Type": "application/json" } });
+    }
+
+    const userData = await userRes.json();
+    const identities = (userData.identities || []).map(id => ({
+      provider: id.provider,
+      user_id: id.user_id,
+      isSocial: id.isSocial ?? ['google-oauth2', 'facebook', 'twitter', 'github', 'apple', 'windowslive'].includes(id.provider)
+    }));
+
+    return new Response(JSON.stringify({ identities }), { status: 200, headers: { "Content-Type": "application/json" } });
+  } catch (e) {
+    console.log('handleIdentities error:', e);
+    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { "Content-Type": "application/json" } });
+  }
 }
 
 export async function handleAutoUpdate(request, env) {
