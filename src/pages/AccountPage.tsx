@@ -263,7 +263,7 @@ export const AccountPage: React.FC = () => {
                   {linkSuccess && <div className="text-green-600 mt-2">連携に成功しました！</div>}
                 </div>
               )}
-              <Button variant="outline" onClick={() => navigate("/")}>ダッシュボードに戻る</Button>
+              <Button variant="outline" onClick={() => navigate("/dashboard")}>ダッシュボードに戻る</Button>
               <Button variant="destructive" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>ログアウト</Button>
             </div>
             <div className="mt-8">

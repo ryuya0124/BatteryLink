@@ -16,7 +16,7 @@ export const Header: React.FC<HeaderProps> = ({
   const location = useLocation();
 
   // 現在のページを判定
-  const isDashboard = location.pathname === "/";
+  const isDashboard = location.pathname === "/dashboard";
   const isAccount = location.pathname === "/account";
   const isApiKeys = location.pathname === "/apikeys";
 
@@ -33,7 +33,7 @@ export const Header: React.FC<HeaderProps> = ({
           <Battery className="h-6 w-6 sm:h-8 sm:w-8 text-blue-600" />
           <h1 
             className="text-2xl sm:text-3xl font-bold text-foreground drop-shadow min-w-0 max-w-full flex-shrink-0 truncate cursor-pointer hover:text-blue-600 transition-colors"
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/dashboard")}
             title="ホームに戻る"
           >
             BatterySync
@@ -43,7 +43,7 @@ export const Header: React.FC<HeaderProps> = ({
           {!isDashboard && (
             <Button 
               variant="outline" 
-              onClick={() => navigate("/")} 
+              onClick={() => navigate("/dashboard")} 
               className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"
             >
               <Home className="h-4 w-4 mr-1" />ダッシュボード
