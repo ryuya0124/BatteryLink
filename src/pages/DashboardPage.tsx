@@ -11,6 +11,7 @@ import { getBatteryColor, getBatteryCapacityColor, getBatteryCapacityBg, phoneMo
 import { AutoUpdateControl } from "../components/AutoUpdateControl";
 import { NoDevices } from "../components/NoDevices";
 import { Layout } from "@/components/Layout";
+import { SEO } from "@/components/SEO";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
@@ -283,6 +284,7 @@ export default function DashboardPage() {
 
   return (
     <Layout error={error} lockScroll>
+      <SEO title="ダッシュボード" noindex />
         {/* 左右分割 */}
         <div className="h-full flex flex-col lg:flex-row gap-8 lg:gap-16 min-h-0">
           {/* 左カラム: 固定 */}

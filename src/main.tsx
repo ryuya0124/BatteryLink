@@ -2,6 +2,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Auth0Provider } from "@auth0/auth0-react";
+import { HelmetProvider } from "react-helmet-async";
 import AppRouter from "./AppRouter";
 import "./index.css";
 import { AuthLoadingProvider } from "@/hooks/AuthLoadingContext";
@@ -17,28 +18,30 @@ const clientId = "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <ThemeModeEffect />
-    <AuthLoadingProvider>
-      <Auth0Provider
-        domain={domain}
-        clientId={clientId}
-        authorizationParams={{
-          redirect_uri: window.location.origin,
-          audience: "https://batt.ryuya-dev.net/"
-        }}
-        onRedirectCallback={(appState) => {
-          if (appState?.returnTo) {
-            window.location.assign(appState.returnTo);
-          } else {
-            window.location.assign("/");
-          }
-        }}
-      >
-        <BrowserRouter>
-          <AppRouter />
-        </BrowserRouter>
-      </Auth0Provider>
-    </AuthLoadingProvider>
+    <HelmetProvider>
+      <ThemeModeEffect />
+      <AuthLoadingProvider>
+        <Auth0Provider
+          domain={domain}
+          clientId={clientId}
+          authorizationParams={{
+            redirect_uri: window.location.origin,
+            audience: "https://batt.ryuya-dev.net/"
+          }}
+          onRedirectCallback={(appState) => {
+            if (appState?.returnTo) {
+              window.location.assign(appState.returnTo);
+            } else {
+              window.location.assign("/");
+            }
+          }}
+        >
+          <BrowserRouter>
+            <AppRouter />
+          </BrowserRouter>
+        </Auth0Provider>
+      </AuthLoadingProvider>
+    </HelmetProvider>
   </React.StrictMode>
 );
 

@@ -1,6 +1,8 @@
 import React from "react";
 import { useNavigate } from "react-router-dom";
+import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
+import { SEO } from "@/components/SEO";
 import {
   Battery,
   Smartphone,
@@ -16,6 +18,7 @@ import {
 
 export default function LandingPage() {
   const navigate = useNavigate();
+  const { loginWithRedirect } = useAuth0();
 
   const features = [
     {
@@ -59,6 +62,7 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground overflow-x-hidden">
+      <SEO canonical="/" />
       {/* Hero Section */}
       <section className="relative min-h-screen flex flex-col">
         {/* Animated Background */}
@@ -80,13 +84,13 @@ export default function LandingPage() {
             <div className="flex items-center gap-3">
               <Button
                 variant="ghost"
-                onClick={() => navigate("/login")}
+                onClick={() => loginWithRedirect()}
                 className="text-muted-foreground hover:text-foreground"
               >
                 ログイン
               </Button>
               <Button
-                onClick={() => navigate("/signup")}
+                onClick={() => loginWithRedirect()}
                 className="bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white shadow-lg shadow-blue-500/25"
               >
                 無料で始める
@@ -126,7 +130,7 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-in fade-in slide-in-from-bottom-4 duration-700 delay-300">
               <Button
                 size="lg"
-                onClick={() => navigate("/signup")}
+                onClick={() => loginWithRedirect()}
                 className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-700 hover:to-cyan-600 text-white text-lg px-8 py-6 shadow-xl shadow-blue-500/30 transition-all hover:scale-105 hover:shadow-blue-500/40"
               >
                 今すぐ無料で始める
@@ -268,7 +272,7 @@ export default function LandingPage() {
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Button
                   size="lg"
-                  onClick={() => navigate("/signup")}
+                  onClick={() => loginWithRedirect()}
                   className="w-full sm:w-auto bg-white text-blue-600 hover:bg-blue-50 text-lg px-8 py-6 shadow-xl transition-all hover:scale-105"
                 >
                   <CheckCircle2 className="mr-2 h-5 w-5" />

@@ -1,0 +1,10 @@
+User-agent: *
+Allow: /
+Disallow: /dashboard
+Disallow: /account
+Disallow: /apikeys
+Disallow: /login
+Disallow: /signup
+Disallow: /auth-error
+
+Sitemap: https://batt.ryuya-dev.netsitemap.xml

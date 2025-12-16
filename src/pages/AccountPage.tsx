@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { Label } from "@/components/ui/label";
 import { Layout } from "@/components/Layout";
+import { SEO } from "@/components/SEO";
 
 const LINK_CLAIM = "https://batt.ryuya-dev.net/account_link_candidate";
 const IDENTITIES_CLAIM = "https://batt.ryuya-dev.net/identities";
@@ -191,6 +192,7 @@ export const AccountPage: React.FC = () => {
 
   return (
     <Layout>
+      <SEO title="アカウント" noindex />
       <div className="max-w-lg mx-auto bg-white dark:bg-card rounded shadow p-8 transition-colors">
             <h2 className="text-3xl font-bold mb-6 text-foreground">アカウント情報</h2>
             <div className="mb-6">
