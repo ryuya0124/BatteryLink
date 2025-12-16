@@ -1,10 +1,10 @@
-# BatteryLink 🔋
+# BatterySync 🔋
 
 複数デバイスのバッテリー状態をリアルタイムで監視・管理できるWebアプリケーション。
 
 ## 概要
 
-BatteryLinkは、スマートフォン、タブレット、ノートパソコンなどの複数デバイスのバッテリー情報を一元管理できるサービスです。Auth0による認証、Cloudflare Workers上で動作するAPIサーバー、React製のダッシュボードを提供します。
+BatterySyncは、スマートフォン、タブレット、ノートパソコンなどの複数デバイスのバッテリー情報を一元管理できるサービスです。Auth0による認証、Cloudflare Workers上で動作するAPIサーバー、React製のダッシュボードを提供します。
 
 ## 機能
 
@@ -39,7 +39,7 @@ BatteryLinkは、スマートフォン、タブレット、ノートパソコン
 ## プロジェクト構造
 
 ```
-BatteryLink/
+BatterySync/
 ├── src/                    # フロントエンドソースコード
 │   ├── components/         # Reactコンポーネント
 │   │   └── ui/            # UIコンポーネント (shadcn/ui)

@@ -23,7 +23,7 @@ export default function TermsOfServicePage() {
           <section className="space-y-4">
             <h2 className="text-xl sm:text-2xl font-semibold">1. はじめに</h2>
             <p>
-              本利用規約（以下「本規約」）は、BatteryLink（以下「本サービス」）の利用条件を定めるものです。
+              本利用規約（以下「本規約」）は、BatterySync（以下「本サービス」）の利用条件を定めるものです。
               本サービスを利用することにより、本規約に同意したものとみなされます。
             </p>
           </section>
@@ -124,7 +124,7 @@ export default function TermsOfServicePage() {
         </div>
 
         <footer className="mt-12 pt-8 border-t text-center text-muted-foreground text-xs sm:text-sm">
-          <p>© 2025 BatteryLink</p>
+          <p>© 2025 BatterySync</p>
         </footer>
       </div>
     </div>

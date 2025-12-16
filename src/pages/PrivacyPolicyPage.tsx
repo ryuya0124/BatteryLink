@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
           <section className="space-y-4">
             <h2 className="text-xl sm:text-2xl font-semibold">1. はじめに</h2>
             <p>
-              BatteryLink（以下「本サービス」）は、お客様のプライバシーを尊重し、個人情報の保護に努めております。
+              BatterySync（以下「本サービス」）は、お客様のプライバシーを尊重し、個人情報の保護に努めております。
               本プライバシーポリシーは、本サービスがどのような情報を収集し、どのように使用・保護するかについて説明します。
             </p>
           </section>
@@ -109,7 +109,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <footer className="mt-12 pt-8 border-t text-center text-muted-foreground text-xs sm:text-sm">
-          <p>© 2025 BatteryLink</p>
+          <p>© 2025 BatterySync</p>
         </footer>
       </div>
     </div>
