@@ -13,8 +13,8 @@ const defaultMeta = {
   title: "BatterySync - 複数デバイスのバッテリー残量を一元管理",
   description: "iPhone、Android、タブレットなど複数デバイスのバッテリー残量をリアルタイムで一元管理。無料で使えるバッテリー監視ダッシュボード。",
   keywords: "バッテリー管理,バッテリー残量,デバイス管理,iPhone,Android,タブレット,リアルタイム監視,BatterySync",
-  siteUrl: "https://battery-sync.com",
-  ogImage: "https://batt.ryuya-dev.netog-image.png",
+  siteUrl: "https://batt.ryuya-dev.net",
+  ogImage: "https://batt.ryuya-dev.net/favicon.png",
 };
 
 export function SEO({
