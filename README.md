@@ -94,7 +94,7 @@ pnpm deploy
 Cloudflare Workersのシークレットとして以下を設定:
 
 - `AUTH0_DOMAIN` - Auth0ドメイン
-- `AUTH0_CLIENT_ID` - Auth0クライアントID
+- `AUTH0_CLIENT_ID` - Auth0クプライバシーライアントID
 - `AUTH0_CLIENT_SECRET` - Auth0クライアントシークレット
 - `AUTH0_AUDIENCE` - Auth0 API識別子
 

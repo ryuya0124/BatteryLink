@@ -1,4 +1,5 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Header } from "./Header";
 
 interface LayoutProps {
@@ -20,7 +21,11 @@ export const Layout: React.FC<LayoutProps> = ({ children, error, lockScroll = fa
           {children}
         </div>
         <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full flex-shrink-0">
-          <p>© 2025 BatterySync</p>
+          <p>© 2025 BatteryLink</p>
+          <div className="mt-2 flex justify-center gap-4">
+            <Link to="/privacy" className="hover:text-foreground transition-colors">プライバシーポリシー</Link>
+            <Link to="/terms" className="hover:text-foreground transition-colors">利用規約</Link>
+          </div>
         </footer>
       </div>
     </div>

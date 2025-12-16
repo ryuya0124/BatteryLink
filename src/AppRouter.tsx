@@ -6,6 +6,8 @@ import LoginPage from "./pages/LoginPage";
 import SignupPage from "./pages/SignupPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import AuthErrorPage from "./pages/AuthErrorPage";
+import PrivacyPolicyPage from "./pages/PrivacyPolicyPage";
+import TermsOfServicePage from "./pages/TermsOfServicePage";
 import { useAuth0 } from "@auth0/auth0-react";
 import { AccountPage } from "@/pages/AccountPage";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
@@ -39,6 +41,8 @@ export default function AppRouter() {
       <Route path="/signup" element={<RequireNoAuth><SignupPage /></RequireNoAuth>} />
       <Route path="/auth-error" element={<AuthErrorPage />} />
       <Route path="/account" element={<RequireAuth><AccountPage /></RequireAuth>} />
+      <Route path="/privacy" element={<PrivacyPolicyPage />} />
+      <Route path="/terms" element={<TermsOfServicePage />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
