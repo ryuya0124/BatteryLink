@@ -116,6 +116,9 @@ Cloudflare Workersのシークレットとして以下を設定:
 ## API エンドポイント
 
 端末用APIキーは `PUT /api/devices/:uuid` の計測値送信用です。
+`battery_level`（0〜100の数値）と `is_charging`（真偽値、互換用に0/1も可）が必須です。
+`temperature`・`voltage`・`os_version` は省略すると既存値を保持し、明示的に `null` を送ると消去します。
+APIキーの最終使用日時は、計測データが正常に保存されたときだけ更新されます。
 デバイス削除・設定変更・APIキー管理にはAuth0ログインが必要です。
 リクエストボディの上限は16KiBです。429応答時は `Retry-After` に従って再送してください。
 

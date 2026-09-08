@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react"
+import { useState, useCallback, useEffect, useRef } from "react"
 import type { AppUser, Device } from "@/types"
 import { fetchWithAuth } from "@/lib/utils"
 import { useAuth0 } from "@auth0/auth0-react"
@@ -8,23 +8,31 @@ export function useDevices(_user: AppUser | null) {
   const [loading, setLoading] = useState(false)
   const [updatingDevices, setUpdatingDevices] = useState<Set<string>>(new Set())
   const { getAccessTokenSilently } = useAuth0();
+  const requestVersion = useRef(0);
+  const hasSnapshot = useRef(false);
+  useEffect(() => () => { requestVersion.current += 1; }, []);
 
   // API経由でデバイス一覧取得
   const fetchDevices = useCallback(async () => {
-    setLoading(true)
+    const version = ++requestVersion.current;
+    if (!hasSnapshot.current) setLoading(true)
     try {
       const res = await fetchWithAuth("/api/devices", { cache: "no-store" }, getAccessTokenSilently)
       if (res && res.ok) {
         const data = await res.json()
+        if (version !== requestVersion.current) return;
         setDevices(data.map((d: any) => ({
           ...d,
           is_charging: Boolean(d.is_charging)
         })))
+        hasSnapshot.current = true;
       } else {
         throw new Error("デバイス一覧の取得に失敗しました")
       }
+    } catch (error) {
+      if (version === requestVersion.current) throw error;
     } finally {
-      setLoading(false)
+      if (version === requestVersion.current) setLoading(false)
     }
   }, [getAccessTokenSilently])
 

@@ -7,6 +7,7 @@ function database() {
   const writes = [];
   return {
     writes,
+    async batch(statements) { return Promise.all(statements.map(statement => statement.run())); },
     prepare(sql) {
       return { bind(...values) {
         assert.ok(values.every(value => value !== undefined), 'D1 cannot bind undefined');
@@ -51,7 +52,7 @@ test('API telemetry accepts legacy 0/1 and omitted optional measurements', async
     }, { DB });
     assert.equal(response.status, 200);
     const update = DB.writes.find(write => write.sql.includes('UPDATE devices'));
-    assert.deepEqual(update.values.slice(0, 5), [42, charging ? 1 : 0, null, null, null]);
+    assert.deepEqual(update.values.slice(0, 8), [42, charging ? 1 : 0, 0, null, 0, null, 0, null]);
   }
 });
 
@@ -63,6 +64,7 @@ test('invalid JSON, null bodies and invalid telemetry never write devices', asyn
     }, { DB });
     assert.equal(response.status, 400, body);
     assert.equal(DB.writes.filter(write => write.sql.includes('UPDATE devices')).length, 0);
+    assert.equal(DB.writes.filter(write => write.sql.includes('UPDATE api_keys')).length, 0);
   }
 });
 

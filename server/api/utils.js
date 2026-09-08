@@ -42,10 +42,7 @@ export async function verifyApiKeyAndUuid(request, env, uuid) {
   if (!deviceResults.length) {
     return { ok: false, status: 403, message: "UUIDが不正です" };
   }
-  await env.DB.prepare(
-    "UPDATE api_keys SET last_used_at = CURRENT_TIMESTAMP WHERE id = ?"
-  ).bind(keyResults[0].id).run();
-  return { ok: true, userId, device: deviceResults[0] };
+  return { ok: true, userId, keyId: keyResults[0].id, device: deviceResults[0] };
 }
 
 export async function verifyAuth0JWT(token, env = {}) {

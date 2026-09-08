@@ -103,18 +103,34 @@ export async function handlePutDevice(request, env, uuid) {
   if (body.temperature != null && !isFiniteNumberInRange(body.temperature, -100, 200)) return json({ error: 'Invalid temperature' }, 400);
   if (body.voltage != null && !(typeof body.voltage === 'string' || (typeof body.voltage === 'number' && Number.isFinite(body.voltage)))) return json({ error: 'Invalid voltage' }, 400);
   if (body.os_version != null && typeof body.os_version !== 'string') return json({ error: 'Invalid os_version' }, 400);
-  await env.DB.prepare(
-    `UPDATE devices SET battery_level=?, is_charging=?, temperature=?, voltage=?, os_version=?, last_updated=? WHERE uuid=? AND user_id=?`
+  // Keep omitted fields; explicit null clears a previously reported measurement.
+  // D1 batches are transactional: usage must not claim success if the write fails.
+  const writes = await env.DB.batch([env.DB.prepare(
+    `UPDATE devices SET battery_level=?, is_charging=?,
+      temperature=CASE WHEN ? THEN ? ELSE temperature END,
+      voltage=CASE WHEN ? THEN ? ELSE voltage END,
+      os_version=CASE WHEN ? THEN ? ELSE os_version END,
+      last_updated=? WHERE uuid=? AND user_id=?
+      AND EXISTS (SELECT 1 FROM api_keys WHERE id=? AND user_id=?)`
   ).bind(
     body.battery_level,
     body.is_charging ? 1 : 0,
+    Object.hasOwn(body, 'temperature') ? 1 : 0,
     body.temperature ?? null,
+    Object.hasOwn(body, 'voltage') ? 1 : 0,
     body.voltage ?? null,
-    body.os_version || null,
+    Object.hasOwn(body, 'os_version') ? 1 : 0,
+    body.os_version ?? null,
     new Date().toISOString(),
     uuid,
+    result.userId,
+    result.keyId,
     result.userId
-  ).run();
+  ), env.DB.prepare(
+    `UPDATE api_keys SET last_used_at=CURRENT_TIMESTAMP WHERE id=? AND user_id=?
+      AND EXISTS (SELECT 1 FROM devices WHERE uuid=? AND user_id=?)`
+  ).bind(result.keyId, result.userId, uuid, result.userId)]);
+  if (!writes[0].meta?.changes) return json({ error: 'Device or API key is no longer available' }, 403);
   return new Response("デバイス更新完了", { status: 200 });
 }
 
