@@ -1,5 +1,5 @@
-import { verifyAuth0JWT } from '../utils.js';
-import { randomOpaqueToken, sha256, verifyApiKeyAndUuid } from "../utils.js";
+import { isFiniteNumberInRange, json, verifyApiKeyAndUuid, verifyAuth0JWT } from "../utils.js";
+import { errorResponse, readObject } from '../http.js';
 
 // 全角英数字を半角に変換する関数
 function convertToHalfWidth(text) {
@@ -16,8 +16,8 @@ export async function handleGetDevices(request, env) {
     return new Response('Unauthorized', { status: 401 });
   }
   const token = auth.slice(7);
-  const payload = await verifyAuth0JWT(token);
   try {
+    const payload = await verifyAuth0JWT(token, env);
     // idを除外しuuidのみ返す
     const { results } = await env.DB.prepare(
       "SELECT uuid, name, brand, model, os_version, model_number, battery_level, last_updated, user_id, is_charging, temperature, voltage FROM devices WHERE user_id = ? ORDER BY last_updated DESC"
@@ -27,11 +27,11 @@ export async function handleGetDevices(request, env) {
       headers: {
         "Content-Type": "application/json",
         "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0"
-      }　
+      }
     });
   } catch (e) {
     console.log("handleGetDevices error:", e);
-    return new Response("認証エラー", { status: 401 });
+    return errorResponse(e);
   }
 }
 
@@ -41,10 +41,21 @@ export async function handlePostDevice(request, env) {
     return new Response('Unauthorized', { status: 401 });
   }
   const token = auth.slice(7);
-  const payload = await verifyAuth0JWT(token);
-  
   try {
-    const device = await request.json();
+    const payload = await verifyAuth0JWT(token, env);
+    const device = await readObject(request);
+    for (const field of ['uuid', 'name', 'brand', 'model', 'model_number']) {
+      if (device[field] != null && (typeof device[field] !== 'string' || device[field].length > 256)) return json({ error: `Invalid ${field}` }, 400);
+    }
+    if (device.is_charging != null && ![true, false, 0, 1].includes(device.is_charging)) return json({ error: 'Invalid is_charging' }, 400);
+    if (device.temperature != null && !isFiniteNumberInRange(device.temperature, -100, 200)) return json({ error: 'Invalid temperature' }, 400);
+    if (device.voltage != null && typeof device.voltage !== 'string' && typeof device.voltage !== 'number') return json({ error: 'Invalid voltage' }, 400);
+    if (typeof device.uuid !== "string" || !device.uuid.trim() || typeof device.name !== "string" || !device.name.trim()) {
+      return json({ error: "uuid and name are required" }, 400);
+    }
+    if (device.battery_level != null && !isFiniteNumberInRange(device.battery_level, 0, 100)) {
+      return json({ error: "battery_level must be between 0 and 100" }, 400);
+    }
     
     // デバイス名を半角に変換
     if (device.name) {
@@ -57,17 +68,17 @@ export async function handlePostDevice(request, env) {
     const voltage = device.voltage !== undefined ? device.voltage : null;
     const isCharging = device.is_charging !== undefined ? (device.is_charging ? 1 : 0) : 0;
 
-    const { results } = await env.DB.prepare(
+    await env.DB.prepare(
       "INSERT INTO devices (uuid, user_id, name, brand, model, model_number, battery_level, last_updated, is_charging, temperature, voltage) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
     ).bind(
       device.uuid,
       payload.sub,
       device.name,
-      device.brand,
-      device.model,
-      device.model_number,
+      device.brand ?? null,
+      device.model ?? null,
+      device.model_number ?? null,
       batteryLevel,
-      device.last_updated,
+      new Date().toISOString(),
       isCharging,
       temperature,
       voltage
@@ -76,7 +87,7 @@ export async function handlePostDevice(request, env) {
     return new Response(JSON.stringify({ success: true, device }), { status: 201 });
   } catch (error) {
     console.error("デバイス作成エラー:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+    return errorResponse(error);
   }
 }
 
@@ -85,14 +96,20 @@ export async function handlePutDevice(request, env, uuid) {
   if (!result.ok) {
     return new Response(result.message, { status: result.status });
   }
-  const body = await request.json();
+  const body = await readObject(request);
+  if (!isFiniteNumberInRange(body.battery_level, 0, 100) || ![true, false, 0, 1].includes(body.is_charging)) {
+    return json({ error: "battery_level (0-100) and boolean is_charging are required" }, 400);
+  }
+  if (body.temperature != null && !isFiniteNumberInRange(body.temperature, -100, 200)) return json({ error: 'Invalid temperature' }, 400);
+  if (body.voltage != null && !(typeof body.voltage === 'string' || (typeof body.voltage === 'number' && Number.isFinite(body.voltage)))) return json({ error: 'Invalid voltage' }, 400);
+  if (body.os_version != null && typeof body.os_version !== 'string') return json({ error: 'Invalid os_version' }, 400);
   await env.DB.prepare(
     `UPDATE devices SET battery_level=?, is_charging=?, temperature=?, voltage=?, os_version=?, last_updated=? WHERE uuid=? AND user_id=?`
   ).bind(
     body.battery_level,
-    body.is_charging,
-    body.temperature,
-    body.voltage,
+    body.is_charging ? 1 : 0,
+    body.temperature ?? null,
+    body.voltage ?? null,
     body.os_version || null,
     new Date().toISOString(),
     uuid,
@@ -101,18 +118,19 @@ export async function handlePutDevice(request, env, uuid) {
   return new Response("デバイス更新完了", { status: 200 });
 }
 
-export async function handlePatchDevice(request, env) {
+export async function handlePatchDevice(request, env, uuid) {
   const auth = request.headers.get('Authorization');
   if (!auth || !auth.startsWith('Bearer ')) {
     return new Response('Unauthorized', { status: 401 });
   }
   const token = auth.slice(7);
-  const payload = await verifyAuth0JWT(token);
-  
   try {
-    const url = new URL(request.url);
-    const uuid = url.pathname.split('/').pop();
-    const updates = await request.json();
+    const payload = await verifyAuth0JWT(token, env);
+    const updates = await readObject(request);
+    for (const field of ['name', 'brand', 'model', 'model_number']) {
+      if (field in updates && (typeof updates[field] !== 'string' || updates[field].length > 256)) return json({ error: `Invalid ${field}` }, 400);
+    }
+    if ('name' in updates && !updates.name.trim()) return json({ error: 'Name is required' }, 400);
     
     // デバイス名を半角に変換
     if (updates.name) {
@@ -131,18 +149,18 @@ export async function handlePatchDevice(request, env) {
     const values = updateFields.map(field => updates[field]);
     values.push(uuid, payload.sub);
 
-    const { results } = await env.DB.prepare(
+    const result = await env.DB.prepare(
       `UPDATE devices SET ${setClause} WHERE uuid = ? AND user_id = ?`
     ).bind(...values).run();
 
-    if (results.changes === 0) {
+    if ((result.meta?.changes ?? 0) === 0) {
       return new Response(JSON.stringify({ error: "Device not found or unauthorized" }), { status: 404 });
     }
 
     return new Response(JSON.stringify({ success: true }), { status: 200 });
   } catch (error) {
     console.error("デバイス更新エラー:", error);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500 });
+    return errorResponse(error);
   }
 }
 
@@ -152,24 +170,18 @@ export async function handleDeleteDevice(request, env, uuid) {
   if (auth && auth.startsWith('Bearer ')) {
     const token = auth.slice(7);
     try {
-      const payload = await verifyAuth0JWT(token);
-      await env.DB.prepare(
+      const payload = await verifyAuth0JWT(token, env);
+      const result = await env.DB.prepare(
         `DELETE FROM devices WHERE uuid=? AND user_id=?`
       ).bind(uuid, payload.sub).run();
-      return new Response("デバイス削除完了", { status: 200 });
-    } catch (e) {
-      // JWT認証失敗時はAPIキー認証にフォールバック
+      if ((result.meta?.changes ?? 0) === 0) return json({ error: "Device not found" }, 404);
+      return json({ success: true });
+    } catch (error) {
+      return errorResponse(error);
     }
   }
-  // APIキー認証（従来通り）
-  const result = await verifyApiKeyAndUuid(request, env, uuid);
-  if (!result.ok) {
-    return new Response(result.message, { status: result.status });
-  }
-  await env.DB.prepare(
-    `DELETE FROM devices WHERE uuid=? AND user_id=?`
-  ).bind(uuid, result.userId).run();
-  return new Response("デバイス削除完了", { status: 200 });
+  // Telemetry keys cannot perform destructive management operations.
+  return json({ error: 'Auth0 login is required to delete a device' }, 401);
 }
 
 // /api/battery/:uuid
@@ -179,8 +191,8 @@ export async function handleGetBatteryInfo(request, env, uuid) {
     return new Response(JSON.stringify({ success: false, error: "Unauthorized" }), { status: 401, headers: { "Content-Type": "application/json" } });
   }
   const token = auth.slice(7);
-  const payload = await verifyAuth0JWT(token);
   try {
+    const payload = await verifyAuth0JWT(token, env);
     const { results } = await env.DB.prepare(
       "SELECT battery_level, is_charging, temperature, voltage, last_updated FROM devices WHERE uuid = ? AND user_id = ?"
     ).bind(uuid, payload.sub).all();
@@ -191,7 +203,7 @@ export async function handleGetBatteryInfo(request, env, uuid) {
       JSON.stringify({ success: true, data: results[0] }),
       { status: 200, headers: { "Content-Type": "application/json" } }
     );
-  } catch (e) {
-    return new Response(JSON.stringify({ success: false, error: "認証エラー" }), { status: 401, headers: { "Content-Type": "application/json" } });
+  } catch (error) {
+    return errorResponse(error);
   }
-} 
+}

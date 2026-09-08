@@ -1,0 +1,5 @@
+AUTH0_DOMAIN=auth0.ryuya-dev.net
+AUTH0_AUDIENCE=https://batt.ryuya-dev.net/
+MGMT_CLIENT_ID=replace-me
+MGMT_CLIENT_SECRET=replace-me
+MGMT_API_AUDIENCE=https://batterysync.jp.auth0.com/api/v2/

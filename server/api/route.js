@@ -1,15 +1,18 @@
 import { Hono } from "hono";
-import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice, handlePatchDevice } from "./handlers/deviceHandlers.js";
+import { handleGetDevices, handlePostDevice, handlePutDevice, handleDeleteDevice, handlePatchDevice, handleGetBatteryInfo } from "./handlers/deviceHandlers.js";
 import { handleGetApiKeys, handlePostApiKey, handleDeleteApiKey, handlePatchApiKey } from "./handlers/apiKeyHandlers.js";
 import { handleMe, handleAutoUpdate, handleDeviceDisplaySettings, handleIdentities } from "./handlers/meHandler.js";
 import { corsMiddleware } from "./cors.js";
 import { handleAccountLink } from "./handlers/accountLinkHandler.js";
 import { handleDeleteAccount } from "./handlers/accountDeleteHandler.js";
+import { limitBody, rateLimit } from './security.js';
 
 const api = new Hono();
 
 // CORSミドルウェアを適用
 api.use("*", corsMiddleware);
+api.use("*", rateLimit);
+api.use("*", limitBody);
 
 // アカウントリンクAPI
 api.post("/link-account", async (c) => {
@@ -25,7 +28,6 @@ api.post("/devices", async (c) => {
 });
 api.put("/devices/:uuid", async (c) => {
   const uuid = c.req.param("uuid");
-  console.log("UUID:" + uuid);
   return handlePutDevice(c.req.raw, c.env, uuid);
 });
 api.delete("/devices/:uuid", async (c) => {
@@ -35,6 +37,9 @@ api.delete("/devices/:uuid", async (c) => {
 api.patch("/devices/:uuid", async (c) => {
   const uuid = c.req.param("uuid");
   return handlePatchDevice(c.req.raw, c.env, uuid);
+});
+api.get("/battery/:uuid", async (c) => {
+  return handleGetBatteryInfo(c.req.raw, c.env, c.req.param("uuid"));
 });
 
 // APIキーAPI

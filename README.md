@@ -58,7 +58,7 @@ BatterySync/
 
 ### 必要要件
 
-- Node.js 18以上
+- Node.js 24以上（回帰テストでNode標準SQLiteを使用）
 - pnpm
 
 ### インストール
@@ -75,6 +75,12 @@ pnpm install
 pnpm dev
 ```
 
+APIも使用する場合は、初回に `pnpm build` と
+`pnpm exec wrangler d1 migrations apply batterylink --local` を実行します。
+別ターミナルで `pnpm dev:api` を起動すると、Viteの `/api` がローカルWorkerに接続します。
+Auth0には開発画面のoriginをAllowed Callback URLs / Allowed Logout URLs / Allowed Web Originsへ登録してください。
+認証の構成には [docs/architecture.md](docs/architecture.md) も参照してください。
+
 ### ビルド
 
 ```bash
@@ -89,16 +95,29 @@ pnpm build
 pnpm deploy
 ```
 
+D1 を初めて用意する場合は、先にマイグレーションを適用します。
+
+```bash
+pnpm exec wrangler d1 migrations apply batterylink --remote
+```
+
 ## 環境変数
 
 Cloudflare Workersのシークレットとして以下を設定:
 
 - `AUTH0_DOMAIN` - Auth0ドメイン
-- `AUTH0_CLIENT_ID` - Auth0クプライバシーライアントID
-- `AUTH0_CLIENT_SECRET` - Auth0クライアントシークレット
 - `AUTH0_AUDIENCE` - Auth0 API識別子
+- `MGMT_CLIENT_ID` - Auth0 Management API用クライアントID
+- `MGMT_CLIENT_SECRET` - Auth0 Management API用クライアントシークレット
+- `MGMT_API_AUDIENCE` - Auth0 Management API識別子
+
+ローカルでは `.dev.vars.example` を `.dev.vars` にコピーし、実値を設定してください。
 
 ## API エンドポイント
+
+端末用APIキーは `PUT /api/devices/:uuid` の計測値送信用です。
+デバイス削除・設定変更・APIキー管理にはAuth0ログインが必要です。
+リクエストボディの上限は16KiBです。429応答時は `Retry-After` に従って再送してください。
 
 | メソッド | エンドポイント | 説明 |
 |---------|---------------|------|

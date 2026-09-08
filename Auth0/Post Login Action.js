@@ -7,10 +7,6 @@ exports.onExecutePostLogin = async (event, api) => {
     const clientId = event.secrets.MGMT_CLIENT_ID;
     const clientSecret = event.secrets.MGMT_CLIENT_SECRET;
 
-    // デバッグログ追加
-    console.log('event.user:', event.user);
-    console.log('event.user.identities:', event.user && event.user.identities);
-
     // 1. Management APIトークンを取得
     const tokenRes = await fetch(`https://${domain}/oauth/token`, {
       method: 'POST',
@@ -23,7 +19,6 @@ exports.onExecutePostLogin = async (event, api) => {
       })
     });
     const tokenJson = await tokenRes.json();
-    console.log('tokenJson:', tokenJson); // 追加
     const access_token = tokenJson.access_token;
     if (!access_token) {
       console.log('Failed to get management API token:', tokenJson);
@@ -62,4 +57,4 @@ exports.onExecutePostLogin = async (event, api) => {
   } catch (e) {
     console.log('Post Login Action error:', e);
   }
-}; 
+};

@@ -10,7 +10,7 @@ export interface Device {
   model: string
   os_version?: string
   model_number: string
-  battery_level: number
+  battery_level: number | null
   last_updated: string
   is_charging?: boolean
   temperature?: number

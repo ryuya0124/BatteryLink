@@ -2,13 +2,18 @@
 	"name": "batterylink",
 	"private": true,
 	"version": "0.0.0",
+	"packageManager": "pnpm@10.28.2",
 	"type": "module",
 	"scripts": {
 		"dev": "vite",
+		"dev:api": "wrangler dev --local --port 8787",
 		"build": "vite build",
 		"lint": "eslint .",
-		"preview": "pnpm build && vite preview",
-		"dep": "pnpm build && wrangler deploy"
+		"typecheck": "tsc --noEmit",
+		"test": "node --test server/*.test.js",
+		"check": "eslint . && tsc --noEmit && vite build",
+		"preview": "vite build && vite preview",
+		"deploy": "eslint . && tsc --noEmit && vite build && wrangler deploy"
 	},
 	"dependencies": {
 		"@auth0/auth0-react": "^2.11.0",
@@ -24,14 +29,14 @@
 		"class-variance-authority": "^0.7.1",
 		"clsx": "^2.1.1",
 		"framer-motion": "^12.23.26",
-		"hono": "^4.11.1",
+		"hono": "^4.12.34",
 		"jose": "^6.1.3",
 		"lucide-react": "^0.561.0",
 		"react": "^19.2.3",
 		"react-dom": "^19.2.3",
 		"react-helmet-async": "^2.0.5",
 		"react-icons": "^5.5.0",
-		"react-router-dom": "^7.10.1",
+		"react-router-dom": "^7.18.2",
 		"tailwind-merge": "^3.4.0"
 	},
 	"devDependencies": {
@@ -50,7 +55,9 @@
 		"postcss": "^8.5.6",
 		"tailwindcss": "^4.1.18",
 		"tw-animate-css": "^1.4.0",
+		"typescript": "^5.9.3",
+		"typescript-eslint": "^8.69.0",
 		"vite": "^7.2.7",
-		"wrangler": "^4.54.0"
+		"wrangler": "^4.129.1"
 	}
 }

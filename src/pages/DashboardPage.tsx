@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
 import { useAuth0 } from "@auth0/auth0-react";
 import { useDevices } from "../hooks/useDevices";
 import { Button } from "../components/ui/button";
@@ -19,15 +18,14 @@ import { useFilterSettings } from "@/hooks/useFilterSettings";
 import type { Device } from "../types";
 
 export default function DashboardPage() {
-  const { user, logout, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
+  const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
   const [showAddDevice, setShowAddDevice] = useState(false);
   const [autoUpdateEnabled, setAutoUpdateEnabled] = useState(false);
-  const navigate = useNavigate();
-  const [showApiKeyManager, setShowApiKeyManager] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [autoUpdateLoading, setAutoUpdateLoading] = useState(true);
   const [manualRefresh, setManualRefresh] = useState(false);
-  const appUser = user ? { id: user.sub, email: user.email } : null;
+  const [search, setSearch] = useState("");
+  const appUser = user?.sub ? { id: user.sub, email: user.email ?? "" } : null;
   const { devices, loading, updatingDevices, setUpdatingDevices, addDevice, updateDevice, deleteDevice, fetchDevices } = useDevices(appUser);
   const { authLoadingShown } = useAuthLoading();
   const isGlobalLoading = (isLoading || loading || autoUpdateLoading) && updatingDevices.size === 0 && !manualRefresh;
@@ -39,31 +37,16 @@ export default function DashboardPage() {
   const [deviceName, setDeviceName] = useState("");
   const [deviceBrand, setDeviceBrand] = useState("");
   const [deviceModel, setDeviceModel] = useState("");
-  const [deviceOsVersion, setDeviceOsVersion] = useState("");
   const [deviceModelNumber, setDeviceModelNumber] = useState("");
   const [batteryLevel, setBatteryLevel] = useState<number | undefined>(undefined);
   const [selectedModelInfo, setSelectedModelInfo] = useState<any>(null);
 
   const MIN_SPIN_DURATION = 500; // ms
 
-  // 初回デバイス取得・設定取得は明示的なボタン/イベントで呼ぶ
-  const handleManualFetchDevices = async () => {
-    if (user) await fetchDevices();
-  };
-  const handleManualFetchUserSettings = async () => {
-    setAutoUpdateLoading(true);
-    const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
-    if (res.ok) {
-      const data = await res.json();
-      setAutoUpdateEnabled(!!data.auto_update);
-    }
-    setAutoUpdateLoading(false);
-  };
   // deviceBrand/deviceModelの副作用はonChangeで直接
   const handleDeviceBrandChange = (brand: string) => {
     setDeviceBrand(brand);
     setDeviceModel("");
-    setDeviceOsVersion("");
     setDeviceModelNumber("");
     setSelectedModelInfo(null);
   };
@@ -72,35 +55,28 @@ export default function DashboardPage() {
     const brandModels = phoneModels[deviceBrand as keyof typeof phoneModels];
     const modelInfo = brandModels?.find((m: any) => m.model === model);
     setSelectedModelInfo(modelInfo);
-    setDeviceOsVersion("");
     setDeviceModelNumber("");
   };
 
   useEffect(() => {
     if (!autoUpdateEnabled || devices.length === 0) return;
     const interval = setInterval(() => {
-      updateAllDevicesBattery();
+      fetchDevices().catch(() => setError("デバイス情報の自動取得に失敗しました"));
     }, 30000);
     return () => clearInterval(interval);
-  }, [autoUpdateEnabled, devices]);
+  }, [autoUpdateEnabled, devices.length, fetchDevices]);
 
-  const fetchBatteryInfo = async (deviceUuid: string) => {
-    try {
-      const response = await fetchWithAuth(`/api/battery/${deviceUuid}`, {}, getAccessTokenSilently);
-      return await response.json();
-    } catch (error) {
-      return { success: false, error: "Network error" };
-    }
-  };
 
   const filteredAndSortedDevices = devices
     .filter((device) => {
+      const query = search.trim().toLocaleLowerCase();
+      if (query && ![device.name, device.brand, device.model, device.uuid].some(value => value?.toLocaleLowerCase().includes(query))) return false;
       const brandMatch = filterSettings.filterBrand === "all" || device.brand === filterSettings.filterBrand;
       const batteryMatch =
         filterSettings.filterBattery === "all" ||
-        (filterSettings.filterBattery === "low" && device.battery_level <= 20) ||
-        (filterSettings.filterBattery === "medium" && device.battery_level > 20 && device.battery_level <= 50) ||
-        (filterSettings.filterBattery === "high" && device.battery_level > 50);
+        (device.battery_level !== null && filterSettings.filterBattery === "low" && device.battery_level <= 20) ||
+        (device.battery_level !== null && filterSettings.filterBattery === "medium" && device.battery_level > 20 && device.battery_level <= 50) ||
+        (device.battery_level !== null && filterSettings.filterBattery === "high" && device.battery_level > 50);
       return brandMatch && batteryMatch;
     })
     .sort((a, b) => {
@@ -110,7 +86,7 @@ export default function DashboardPage() {
           comparison = a.name.localeCompare(b.name);
           break;
         case "battery_level":
-          comparison = a.battery_level - b.battery_level;
+          comparison = (a.battery_level ?? -1) - (b.battery_level ?? -1);
           break;
         case "last_updated":
           comparison = new Date(a.last_updated).getTime() - new Date(b.last_updated).getTime();
@@ -132,7 +108,7 @@ export default function DashboardPage() {
       brand: deviceBrand,
       model: deviceModel,
       model_number: deviceModelNumber,
-      battery_level: batteryLevel,
+      battery_level: batteryLevel ?? null,
       last_updated: new Date().toISOString(),
       auto_update: undefined, // 送らない
       is_charging: false,
@@ -146,7 +122,6 @@ export default function DashboardPage() {
       setDeviceName("");
       setDeviceBrand("");
       setDeviceModel("");
-      setDeviceOsVersion("");
       setDeviceModelNumber("");
       setBatteryLevel(undefined);
       setSelectedModelInfo(null);
@@ -161,7 +136,7 @@ export default function DashboardPage() {
     setUpdatingDevices((prev) => new Set(prev).add(uuid));
     const start = Date.now();
     try {
-      await updateDeviceBattery(uuid);
+      await fetchDevices();
     } catch (err: any) {
       setError("デバイス更新に失敗しました: " + (err?.message || "不明なエラー"));
     }
@@ -194,38 +169,8 @@ export default function DashboardPage() {
     }
   };
 
-  const updateDeviceBattery = useCallback(async (deviceUuid: string) => {
-    try {
-      const result = await fetchBatteryInfo(deviceUuid);
-      if (result.success && result.data) {
-        const { battery_level, is_charging, temperature, voltage } = result.data;
-        await updateDevice(deviceUuid, {
-          battery_level,
-          is_charging,
-          temperature,
-          voltage,
-          last_updated: new Date().toISOString(),
-        });
-      } else {
-        throw new Error(result.error || "バッテリー情報の取得に失敗しました");
-      }
-    } catch (error) {
-      console.error("デバイス更新エラー:", error);
-      throw error;
-    }
-  }, [updateDevice, getAccessTokenSilently]);
 
-  const updateAllDevicesBattery = useCallback(async () => {
-    if (!devices.length) return;
-    const updatePromises = devices.map(device => updateDeviceBattery(device.uuid));
-    try {
-      await Promise.allSettled(updatePromises);
-    } catch (error) {
-      console.error("全デバイス更新エラー:", error);
-    }
-  }, [devices, updateDeviceBattery]);
-
-  const fetchUserSettings = async () => {
+  const fetchUserSettings = useCallback(async () => {
     setAutoUpdateLoading(true);
     try {
       const res = await fetchWithAuth("/api/auth/me", {}, getAccessTokenSilently);
@@ -237,7 +182,7 @@ export default function DashboardPage() {
       console.error("ユーザー設定取得エラー:", error);
     }
     setAutoUpdateLoading(false);
-  };
+  }, [getAccessTokenSilently]);
 
   const handleAutoUpdateChange = async (enabled: boolean) => {
     setAutoUpdateLoading(true);
@@ -263,18 +208,20 @@ export default function DashboardPage() {
   const handleManualRefresh = async () => {
     setManualRefresh(true);
     try {
-      await updateAllDevicesBattery();
+      await fetchDevices();
+    } catch {
+      setError("デバイス情報の取得に失敗しました");
     } finally {
       setManualRefresh(false);
     }
   };
 
   useEffect(() => {
-    if (isAuthenticated && user) {
-      handleManualFetchDevices();
+    if (isAuthenticated) {
+      fetchDevices().catch(() => setError("デバイス一覧の取得に失敗しました"));
       fetchUserSettings();
     }
-  }, [isAuthenticated, user]);
+  }, [isAuthenticated, user?.sub, fetchDevices, fetchUserSettings]);
 
   if (authLoadingShown && isGlobalLoading) {
     return <FullScreenLoader label="ダッシュボードを読み込み中..." />;
@@ -283,10 +230,22 @@ export default function DashboardPage() {
   if (!isAuthenticated) return <div>未認証</div>;
 
   return (
-    <Layout error={error} lockScroll>
+    <Layout error={error}>
       <SEO title="ダッシュボード" noindex />
+      <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">BatteryLink / Overview</p>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">デバイスの状態</h1>
+          <p className="mt-1 text-sm text-muted-foreground">端末から届いた最新のバッテリー情報を確認できます。</p>
+        </div>
+        <div className="w-full sm:max-w-xs">
+          <label htmlFor="device-search" className="mb-1 block text-sm font-medium">デバイスを検索</label>
+          <input id="device-search" type="search" value={search} onChange={event => setSearch(event.target.value)}
+            placeholder="名前・ブランド・モデル・UUID" className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring" />
+        </div>
+      </div>
         {/* 左右分割 */}
-        <div className="h-full flex flex-col lg:flex-row gap-8 lg:gap-16 min-h-0">
+        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 min-h-0">
           {/* 左カラム: 固定 */}
           <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 px-0">
             <AutoUpdateControl
@@ -333,7 +292,7 @@ export default function DashboardPage() {
             <div className="flex-1 overflow-y-auto min-h-0 px-0" style={{ scrollbarGutter: 'stable' }}>
               <div className="w-full px-0">
                 <div 
-                  className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(16rem,1fr))]"
+                  className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]"
                 >
                   {filteredAndSortedDevices.map((device) => (
                     <div key={device.uuid} className="w-full">
@@ -362,4 +321,4 @@ export default function DashboardPage() {
         </div>
     </Layout>
   );
-} 
+}

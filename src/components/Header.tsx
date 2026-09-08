@@ -69,7 +69,7 @@ export const Header: React.FC<HeaderProps> = ({
           )}
           <Button 
             variant="outline" 
-            onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })} 
+            onClick={() => logout({ logoutParams: { returnTo: window.location.origin + "/" } })}
             className="w-full sm:w-auto flex-1 sm:flex-none min-w-0 text-xs sm:text-sm whitespace-nowrap flex items-center justify-center"
           >
             <LogOut className="h-4 w-4 mr-2" />

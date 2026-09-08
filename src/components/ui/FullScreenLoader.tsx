@@ -8,6 +8,13 @@ interface FullScreenLoaderProps {
   label?: string
 }
 
+const particles = Array.from({ length: 12 }, (_, index) => ({
+  left: `${(index * 37) % 100}%`,
+  top: `${(index * 61) % 100}%`,
+  animationDelay: `${(index % 5) * 0.8}s`,
+  animationDuration: `${8 + (index % 4)}s`,
+}))
+
 const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({ label }) => {
   const [mounted, setMounted] = useState(false)
 
@@ -19,16 +26,11 @@ const FullScreenLoader: React.FC<FullScreenLoaderProps> = ({ label }) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Background animated particles */}
       <div className="absolute inset-0 overflow-hidden">
-        {[...Array(12)].map((_, i) => (
+        {particles.map((style, i) => (
           <div
             key={i}
             className="absolute w-2 h-2 bg-blue-400/40 rounded-full animate-float"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 5}s`,
-              animationDuration: `${8 + Math.random() * 4}s`,
-            }}
+            style={style}
           />
         ))}
       </div>

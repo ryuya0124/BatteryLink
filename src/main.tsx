@@ -13,8 +13,9 @@ function ThemeModeEffect() {
   return null;
 }
 
-const domain = "auth0.ryuya-dev.net";
-const clientId = "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
+const domain = import.meta.env.VITE_AUTH0_DOMAIN || "auth0.ryuya-dev.net";
+const clientId = import.meta.env.VITE_AUTH0_CLIENT_ID || "flFVecIEsCGbfbzV7uUAqQsYBbkAcDEg";
+const audience = import.meta.env.VITE_AUTH0_AUDIENCE || "https://batt.ryuya-dev.net/";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
@@ -26,14 +27,15 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
           clientId={clientId}
           authorizationParams={{
             redirect_uri: window.location.origin,
-            audience: "https://batt.ryuya-dev.net/"
+            audience,
           }}
           onRedirectCallback={(appState) => {
-            if (appState?.returnTo) {
-              window.location.assign(appState.returnTo);
-            } else {
-              window.location.assign("/");
-            }
+            const requested = new URL(appState?.returnTo || "/", window.location.origin);
+            const target = requested.origin === window.location.origin
+              ? requested.pathname + requested.search + requested.hash
+              : "/";
+            window.history.replaceState({}, document.title, target);
+            window.dispatchEvent(new PopStateEvent("popstate"));
           }}
         >
           <BrowserRouter>
@@ -44,29 +46,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     </HelmetProvider>
   </React.StrictMode>
 );
-
-export async function fetchWithAuth(input: RequestInfo, init: RequestInit = {}) {
-  let token = localStorage.getItem("token");
-  if (!init.headers) init.headers = {};
-  (init.headers as any)["Authorization"] = `Bearer ${token}`;
-
-  // APIリクエストにもcredentials: \"include\"を付与
-  init.credentials = "include";
-
-  let res = await fetch(input, init);
-  if (res.status === 401) {
-    // リフレッシュ時もcredentials: \"include\"を付与
-    const refreshRes = await fetch("/api/auth/refresh", { method: "POST", credentials: "include" });
-    if (refreshRes.ok) {
-      const { token: newToken } = await refreshRes.json();
-      localStorage.setItem("token", newToken);
-      (init.headers as any)["Authorization"] = `Bearer ${newToken}`;
-      res = await fetch(input, init);
-    } else {
-      localStorage.removeItem("token");
-      window.location.href = "/login";
-      return res;
-    }
-  }
-  return res;
-}

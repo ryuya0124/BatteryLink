@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
 import { useNavigate, useLocation } from "react-router-dom";
@@ -19,19 +19,16 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
-const LINK_CLAIM = "https://batt.ryuya-dev.net/account_link_candidate";
-const IDENTITIES_CLAIM = "https://batt.ryuya-dev.net/identities";
 
 export const AccountPage: React.FC = () => {
-  const { user, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, logout, getIdTokenClaims } = useAuth0();
+  const { user, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0();
   const navigate = useNavigate();
   const location = useLocation();
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
   const [linkSuccess, setLinkSuccess] = useState(false);
-  const [hasLinkCandidate, setHasLinkCandidate] = useState(false);
   const [identities, setIdentities] = useState<any[]>([]);
-  const [claimsDebug, setClaimsDebug] = useState<any>(null);
+  const linkRequestStarted = useRef(false);
   const [theme, setTheme] = useThemeMode();
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleteConfirmText, setDeleteConfirmText] = useState("");
@@ -56,7 +53,7 @@ export const AccountPage: React.FC = () => {
   };
 
   // APIからidentitiesを取得
-  const fetchIdentitiesFromApi = async () => {
+  const fetchIdentitiesFromApi = useCallback(async () => {
     try {
       const token = await getAccessTokenSilently();
       const res = await fetch('/api/auth/identities', {
@@ -70,7 +67,7 @@ export const AccountPage: React.FC = () => {
       console.error('Failed to fetch identities from API:', e);
     }
     return null;
-  };
+  }, [getAccessTokenSilently]);
 
   // identitiesを読み込み（自動）
   useEffect(() => {
@@ -90,11 +87,7 @@ export const AccountPage: React.FC = () => {
           }
         }
 
-        // クレームも読み込み（リンク候補の確認用）
-        const claims = await getIdTokenClaims();
-        setClaimsDebug(claims);
-        setHasLinkCandidate(!!(claims && (claims as any)[LINK_CLAIM]));
-      } catch (e) {
+      } catch {
         // 取得失敗時のフォールバック
         if (user?.sub) {
           const mainIdentity = extractIdentityFromSub(user.sub);
@@ -107,13 +100,13 @@ export const AccountPage: React.FC = () => {
     if (isAuthenticated) {
       loadIdentities();
     }
-  }, [isAuthenticated, getAccessTokenSilently, getIdTokenClaims, user?.sub]);
+  }, [isAuthenticated, getAccessTokenSilently, user?.sub, fetchIdentitiesFromApi]);
 
   // リダイレクト復帰後のリンク処理
   useEffect(() => {
     const params = new URLSearchParams(location.search);
     const linkingFlag = params.get("linking");
-    if (linkingFlag === "1") {
+    if (linkingFlag === "1" && !linkRequestStarted.current) {
       const originalToken = sessionStorage.getItem("linking_original_token");
       const provider = sessionStorage.getItem("linking_provider");
       if (!originalToken || !provider) {
@@ -122,6 +115,7 @@ export const AccountPage: React.FC = () => {
         sessionStorage.removeItem("linking_provider");
         return;
       }
+      linkRequestStarted.current = true;
       (async () => {
         setLinking(true);
         setLinkError(null);
@@ -143,15 +137,9 @@ export const AccountPage: React.FC = () => {
               setIdentities(apiIdentities);
             }
             
-            // クレームも更新
-            const claims = await getIdTokenClaims();
-            setClaimsDebug(claims);
-            setHasLinkCandidate(!!(claims && (claims as any)[LINK_CLAIM]));
             
-            // 2秒後にページをリロードして最新の状態を取得
-            setTimeout(() => {
-              window.location.href = '/account';
-            }, 2000);
+            // Obtain a new session for the linked primary account.
+            await loginWithRedirect({ authorizationParams: { prompt: "login" }, appState: { returnTo: "/account" } });
           } else {
             const err = await res.json().catch(() => ({}));
             setLinkError(err.error || "リンクに失敗しました");
@@ -166,7 +154,7 @@ export const AccountPage: React.FC = () => {
         }
       })();
     }
-  }, [location.search, getAccessTokenSilently, getIdTokenClaims]);
+  }, [location.search, getAccessTokenSilently, fetchIdentitiesFromApi, loginWithRedirect]);
 
   // 汎用プロバイダ連携
   const handleLinkWithProvider = async (provider: string) => {
@@ -234,7 +222,7 @@ export const AccountPage: React.FC = () => {
       
       if (res.ok) {
         // 削除成功後、ログアウトしてトップページへ
-        logout({ logoutParams: { returnTo: window.location.origin } });
+        logout({ logoutParams: { returnTo: window.location.origin + "/" } });
       } else {
         const err = await res.json().catch(() => ({}));
         setDeleteError(err.error || "アカウントの削除に失敗しました");
@@ -255,9 +243,6 @@ export const AccountPage: React.FC = () => {
     isSocial: id.isSocial || ['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(normalizeProvider(id))
   }));
 
-  // Google連携済み判定（例）
-  const isGoogleLinked = normalizedIdentities.some((id: any) => id.providerKey === 'google-oauth2');
-  const shouldShowLinkButton = hasLinkCandidate && !isGoogleLinked;
 
   return (
     <Layout>
@@ -341,7 +326,7 @@ export const AccountPage: React.FC = () => {
                 </div>
               )}
               <Button variant="outline" onClick={() => navigate("/dashboard")}>ダッシュボードに戻る</Button>
-              <Button variant="destructive" onClick={() => logout({ logoutParams: { returnTo: window.location.origin } })}>ログアウト</Button>
+              <Button variant="destructive" onClick={() => logout({ logoutParams: { returnTo: window.location.origin + "/" } })}>ログアウト</Button>
             </div>
             <div className="mt-8">
               <h3 className="font-bold mb-2">テーマ設定</h3>
@@ -439,4 +424,4 @@ export const AccountPage: React.FC = () => {
       </Dialog>
     </Layout>
   );
-}; 
+};

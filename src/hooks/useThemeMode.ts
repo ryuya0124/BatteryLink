@@ -17,7 +17,7 @@ export function useThemeMode(): [ThemeMode, (mode: ThemeMode) => void] {
   });
 
   useEffect(() => {
-    let applied: "light" | "dark" = theme === "system" ? getSystemTheme() : theme;
+    const applied: "light" | "dark" = theme === "system" ? getSystemTheme() : theme;
     document.body.classList.toggle("dark", applied === "dark");
   }, [theme]);
 
@@ -38,4 +38,4 @@ export function useThemeMode(): [ThemeMode, (mode: ThemeMode) => void] {
   };
 
   return [theme, setThemeMode];
-} 
+}

@@ -4,9 +4,14 @@ compatibility_date = "2025-12-15"
 account_id = "9df138cc6e3f2aee3531fd5aaa9e7b61"
 workers_dev = false
 
+routes = [
+  { pattern = "batt.ryuya-dev.net", custom_domain = true }
+]
+
 [assets]
 directory = "dist"
 not_found_handling = "single-page-application"
+run_worker_first = ["/api", "/api/*"]
 
 [observability]
 enabled = true
@@ -14,11 +19,15 @@ enabled = true
 [vars]
 NODE_ENV = "production"
 
-routes = [
-  "!auth0.ryuya-dev.net/*",
-  "batt.ryuya-dev.net/*",
-  "!batt.ryuya-dev.net/cdn-cgi/*" # これで除外
-]
+[[ratelimits]]
+name = "API_RATE_LIMITER"
+namespace_id = "7240101"
+simple = { limit = 300, period = 60 }
+
+[[ratelimits]]
+name = "ACCOUNT_RATE_LIMITER"
+namespace_id = "7240102"
+simple = { limit = 20, period = 60 }
 
 [[r2_buckets]]
 binding = "R2"         # JavaScript側で使うバインディング名

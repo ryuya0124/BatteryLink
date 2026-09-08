@@ -7,8 +7,13 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 export default defineConfig({
-  base: "./",
+  base: "/",
   plugins: [react()],
+  server: {
+    proxy: {
+      '/api': 'http://127.0.0.1:8787',
+    },
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src'),

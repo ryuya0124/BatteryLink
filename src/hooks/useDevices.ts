@@ -3,7 +3,7 @@ import type { AppUser, Device } from "@/types"
 import { fetchWithAuth } from "@/lib/utils"
 import { useAuth0 } from "@auth0/auth0-react"
 
-export function useDevices(user: AppUser | null) {
+export function useDevices(_user: AppUser | null) {
   const [devices, setDevices] = useState<Device[]>([])
   const [loading, setLoading] = useState(false)
   const [updatingDevices, setUpdatingDevices] = useState<Set<string>>(new Set())
@@ -21,12 +21,11 @@ export function useDevices(user: AppUser | null) {
           is_charging: Boolean(d.is_charging)
         })))
       } else {
-        setDevices([])
+        throw new Error("デバイス一覧の取得に失敗しました")
       }
-    } catch (e) {
-      setDevices([])
+    } finally {
+      setLoading(false)
     }
-    setLoading(false)
   }, [getAccessTokenSilently])
 
   // デバイス追加
@@ -40,6 +39,8 @@ export function useDevices(user: AppUser | null) {
     }, getAccessTokenSilently)
     if (res && res.ok) {
       await fetchDevices()
+    } else {
+      throw new Error("デバイス追加に失敗しました")
     }
   }, [fetchDevices, getAccessTokenSilently])
 
@@ -73,9 +74,10 @@ export function useDevices(user: AppUser | null) {
 
   // デバイス削除
   const deleteDevice = useCallback(async (uuid: string) => {
-    await fetchWithAuth(`/api/devices/${encodeURIComponent(uuid)}`, {
+    const response = await fetchWithAuth(`/api/devices/${encodeURIComponent(uuid)}`, {
       method: "DELETE",
     }, getAccessTokenSilently)
+    if (!response.ok) throw new Error("デバイス削除に失敗しました")
     await fetchDevices()
   }, [fetchDevices, getAccessTokenSilently])
 

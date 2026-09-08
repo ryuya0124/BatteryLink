@@ -1,4 +1,5 @@
 import { verifyAuth0JWT } from '../utils.js';
+import { errorResponse, readObject } from '../http.js';
 
 // Auth0設定
 const AUTH0_DOMAIN = 'auth0.ryuya-dev.net';
@@ -25,7 +26,7 @@ export async function handleMe(request, env) {
     return new Response('Unauthorized', { status: 401 });
   }
   const token = auth.slice(7);
-  const payload = await verifyAuth0JWT(token);
+  const payload = await verifyAuth0JWT(token, env);
   const { results } = await env.DB.prepare(
     "SELECT auto_update FROM user_settings WHERE user_id = ?"
   ).bind(payload.sub).all();
@@ -41,7 +42,7 @@ export async function handleIdentities(request, env) {
       return new Response('Unauthorized', { status: 401 });
     }
     const token = auth.slice(7);
-    const payload = await verifyAuth0JWT(token);
+    const payload = await verifyAuth0JWT(token, env);
     const userId = payload.sub;
 
     // Management APIトークンを取得
@@ -73,7 +74,7 @@ export async function handleIdentities(request, env) {
     return new Response(JSON.stringify({ identities }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.log('handleIdentities error:', e);
-    return new Response(JSON.stringify({ error: 'Internal Server Error' }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return errorResponse(e);
   }
 }
 
@@ -87,8 +88,9 @@ export async function handleAutoUpdate(request, env) {
       return new Response('Unauthorized', { status: 401 });
     }
     const token = auth.slice(7);
-    const payload = await verifyAuth0JWT(token);
-    const { auto_update } = await request.json();
+    const payload = await verifyAuth0JWT(token, env);
+    const { auto_update } = await readObject(request);
+    if (typeof auto_update !== 'boolean') return Response.json({ error: 'auto_update must be boolean' }, { status: 400 });
 
     await env.DB.prepare(
       `INSERT INTO user_settings (user_id, auto_update) VALUES (?, ?)
@@ -98,7 +100,7 @@ export async function handleAutoUpdate(request, env) {
     return new Response(JSON.stringify({ success: true }), { status: 200, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.log("handleAutoUpdate error:", e);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return errorResponse(e);
   }
 }
 
@@ -110,7 +112,7 @@ export async function handleDeviceDisplaySettings(request, env) {
         return new Response('Unauthorized', { status: 401 });
       }
       const token = auth.slice(7);
-      const payload = await verifyAuth0JWT(token);
+      const payload = await verifyAuth0JWT(token, env);
       const url = new URL(request.url);
       const deviceUuid = url.searchParams.get('device_uuid');
       
@@ -137,8 +139,13 @@ export async function handleDeviceDisplaySettings(request, env) {
         return new Response('Unauthorized', { status: 401 });
       }
       const token = auth.slice(7);
-      const payload = await verifyAuth0JWT(token);
-      const { device_uuid, show_temperature, show_voltage } = await request.json();
+      const payload = await verifyAuth0JWT(token, env);
+      const { device_uuid, show_temperature, show_voltage } = await readObject(request);
+      if (typeof device_uuid !== 'string' || !device_uuid || typeof show_temperature !== 'boolean' || typeof show_voltage !== 'boolean') {
+        return Response.json({ error: 'Device UUID and boolean settings are required' }, { status: 400 });
+      }
+      const owned = await env.DB.prepare("SELECT uuid FROM devices WHERE uuid = ? AND user_id = ?").bind(device_uuid, payload.sub).first();
+      if (!owned) return Response.json({ error: 'Device not found' }, { status: 404 });
 
       // JavaScriptのtrue/falseをSQLiteの1/0に変換
       await env.DB.prepare(
@@ -154,6 +161,6 @@ export async function handleDeviceDisplaySettings(request, env) {
     return new Response(JSON.stringify({ error: "Method Not Allowed" }), { status: 405, headers: { "Content-Type": "application/json" } });
   } catch (e) {
     console.log("handleDeviceDisplaySettings error:", e);
-    return new Response(JSON.stringify({ error: "Internal Server Error" }), { status: 500, headers: { "Content-Type": "application/json" } });
+    return errorResponse(e);
   }
-} 
+}

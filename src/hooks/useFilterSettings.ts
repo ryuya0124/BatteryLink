@@ -49,7 +49,7 @@ export function useFilterSettings() {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
       setSettings(newSettings);
-      console.log('フィルタ設定を保存しました:', newSettings);
+      window.dispatchEvent(new Event('batterylink:filter-settings'));
     } catch (error) {
       console.error('フィルタ設定の保存に失敗しました:', error);
     }
@@ -69,6 +69,15 @@ export function useFilterSettings() {
   // 初回読み込み
   useEffect(() => {
     loadSettings();
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === STORAGE_KEY || event.key === null) loadSettings();
+    };
+    window.addEventListener('storage', onStorage);
+    window.addEventListener('batterylink:filter-settings', loadSettings);
+    return () => {
+      window.removeEventListener('storage', onStorage);
+      window.removeEventListener('batterylink:filter-settings', loadSettings);
+    };
   }, [loadSettings]);
 
   return {

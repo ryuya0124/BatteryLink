@@ -25,9 +25,9 @@ export const DeviceStats: React.FC<DeviceStatsProps> = ({ devices }) => (
       </CardHeader>
       <CardContent>
         <div className="text-2xl font-bold text-red-500">
-          {devices.filter((device) => device.battery_level <= 20).length}
+          {devices.filter((device) => device.battery_level !== null && device.battery_level <= 20).length}
         </div>
       </CardContent>
     </Card>
   </div>
-) 
+)

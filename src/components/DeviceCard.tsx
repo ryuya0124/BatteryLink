@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { DeviceEditDialog } from "./DeviceEditDialog";
-import { Smartphone, Battery, Zap, Pencil, Trash2, RefreshCw, Thermometer, Gauge } from "lucide-react";
+import { Smartphone, Battery, Zap, Pencil, Trash2, RefreshCw, Thermometer } from "lucide-react";
 import { Device } from "../types";
 import { useDeviceDisplaySettings } from "@/hooks/useDeviceDisplaySettings";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
@@ -28,12 +28,9 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   onEdit,
   updating,
   getBatteryColor,
-  getBatteryCapacityColor,
-  getBatteryCapacityBg,
 }) => {
   const [editOpen, setEditOpen] = useState(false);
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
-  const [showSkeleton, setShowSkeleton] = useState(false);
   const { settings, loading, fetchSettings } = useDeviceDisplaySettings(device.uuid);
   const isMountedRef = useRef(true);
 
@@ -44,12 +41,6 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
     return "bg-blue-500";
   };
 
-  const handleEditClose = () => {
-    setEditOpen(false);
-    setShowSkeleton(true);
-    fetchSettings();
-    setTimeout(() => setShowSkeleton(false), 300);
-  };
 
   useEffect(() => {
     return () => {
@@ -64,7 +55,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
   }, [editOpen, fetchSettings]);
 
   return (
-    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border-0 shadow-md flex flex-col min-w-64">
+    <Card className="w-full max-w-md sm:max-w-lg mx-auto hover:shadow-lg transition-all duration-200 border shadow-sm flex flex-col min-w-0">
       <CardHeader className="pb-3 flex-shrink-0">
         <div className="flex flex-wrap sm:flex-nowrap items-start justify-between gap-2 sm:gap-0">
           <div className="flex items-start gap-3 flex-1 min-w-0">
@@ -122,7 +113,7 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
             {typeof device.battery_level === "number" ? (
               <span className={`font-bold text-base sm:text-lg ${getBatteryColor(device.battery_level)}`}>{device.battery_level}%</span>
             ) : (
-              <span className="text-muted-foreground text-xs sm:text-sm">未登録</span>
+              <span className="text-muted-foreground text-xs sm:text-sm">未計測</span>
             )}
           </div>
 
@@ -176,13 +167,13 @@ export const DeviceCard: React.FC<DeviceCardProps> = ({
                   ? "opacity-100" 
                   : "opacity-0 pointer-events-none"
               } ${
-                device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+                device.temperature !== undefined && device.temperature !== null
                   ? "bg-orange-50 dark:bg-orange-900 text-orange-700 dark:text-orange-200 border-orange-200 dark:border-orange-900 hover:bg-orange-100 dark:hover:bg-orange-800"
                   : "bg-muted text-muted-foreground border-muted-foreground/20"
               }`}
             >
               <Thermometer className="w-3 h-3 mr-1" />
-              {device.temperature !== undefined && device.temperature !== null && device.temperature !== 0
+              {device.temperature !== undefined && device.temperature !== null
                 ? `${device.temperature}℃`
                 : "温度未登録"}
             </Badge>

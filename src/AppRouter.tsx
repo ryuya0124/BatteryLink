@@ -1,5 +1,5 @@
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Routes, Route, Navigate, useLocation } from "react-router-dom";
 import DashboardPage from "./pages/DashboardPage";
 import ApiKeyPage from "./pages/ApiKeyPage";
 import LoginPage from "./pages/LoginPage";
@@ -15,19 +15,21 @@ import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
+  const location = useLocation();
   const { isAuthenticated, isLoading } = useAuth0();
   const { setAuthLoadingShown } = useAuthLoading();
+  useEffect(() => {
+    if (isLoading) setAuthLoadingShown(true);
+  }, [isLoading, setAuthLoadingShown]);
   if (isLoading) {
-    setAuthLoadingShown(true);
     return <FullScreenLoader label="認証情報を確認中..." />;
   }
-  if (!isAuthenticated) return <Navigate to="/login" replace />;
+  if (!isAuthenticated) return <Navigate to="/login" state={{ returnTo: location.pathname + location.search }} replace />;
   return <>{children}</>;
 }
 
 function RequireNoAuth({ children }: { children: React.ReactNode }) {
   const { isAuthenticated, isLoading } = useAuth0();
-  console.log('RequireNoAuth:', { isAuthenticated, isLoading });
   if (isLoading) return <FullScreenLoader label="認証情報を確認中..." />;
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
   return <>{children}</>;
@@ -37,8 +39,10 @@ function RequireNoAuth({ children }: { children: React.ReactNode }) {
 function RootRedirect() {
   const { isAuthenticated, isLoading } = useAuth0();
   const { setAuthLoadingShown } = useAuthLoading();
+  useEffect(() => {
+    if (isLoading) setAuthLoadingShown(true);
+  }, [isLoading, setAuthLoadingShown]);
   if (isLoading) {
-    setAuthLoadingShown(true);
     return <FullScreenLoader label="認証情報を確認中..." />;
   }
   if (isAuthenticated) return <Navigate to="/dashboard" replace />;
@@ -60,4 +64,4 @@ export default function AppRouter() {
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
-} 
+}

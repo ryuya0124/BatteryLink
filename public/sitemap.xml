@@ -1,17 +1,17 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://batt.ryuya-dev.net</loc>
+    <loc>https://batt.ryuya-dev.net/</loc>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://batt.ryuya-dev.netprivacy</loc>
+    <loc>https://batt.ryuya-dev.net/privacy</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>
   <url>
-    <loc>https://batt.ryuya-dev.netterms</loc>
+    <loc>https://batt.ryuya-dev.net/terms</loc>
     <changefreq>monthly</changefreq>
     <priority>0.5</priority>
   </url>

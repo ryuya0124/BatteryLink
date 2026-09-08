@@ -89,14 +89,12 @@ export async function fetchWithAuth(
   init: RequestInit = {},
   getAccessTokenSilently: (opts?: any) => Promise<string>
 ) {
-  const token = await getAccessTokenSilently({
-    audience: import.meta.env.VITE_AUTH0_AUDIENCE,
-  });
+  const audience = import.meta.env.VITE_AUTH0_AUDIENCE || "https://batt.ryuya-dev.net/";
+  const token = await getAccessTokenSilently({ authorizationParams: { audience } });
+  const headers = new Headers(init.headers);
+  headers.set("Authorization", `Bearer ${token}`);
   return fetch(input, {
     ...init,
-    headers: {
-      ...(init.headers || {}),
-      Authorization: `Bearer ${token}`,
-    },
+    headers,
   });
 }

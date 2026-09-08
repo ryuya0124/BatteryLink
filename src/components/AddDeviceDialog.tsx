@@ -1,123 +1,54 @@
-import React, { useState, useEffect } from "react";
+import { useState, type FormEvent } from "react";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus } from "lucide-react";
 
 interface AddDeviceDialogProps {
-  open: boolean
-  onOpenChange: (v: boolean) => void
-  deviceName: string
-  setDeviceName: (v: string) => void
-  deviceBrand: string
-  setDeviceBrand: (v: string) => void
-  deviceModel: string
-  setDeviceModel: (v: string) => void
-  deviceModelNumber: string
-  setDeviceModelNumber: (v: string) => void
-  phoneModels: Record<string, any[]>
-  selectedModelInfo: any
-  onSubmit: (e: React.FormEvent) => void
+  open: boolean;
+  onOpenChange: (value: boolean) => void;
+  deviceName: string;
+  setDeviceName: (value: string) => void;
+  deviceBrand: string;
+  setDeviceBrand: (value: string) => void;
+  deviceModel: string;
+  setDeviceModel: (value: string) => void;
+  deviceModelNumber: string;
+  setDeviceModelNumber: (value: string) => void;
+  phoneModels: Record<string, { model: string }[]>;
+  selectedModelInfo: unknown;
+  onSubmit: (event: FormEvent) => void | Promise<void>;
 }
 
-export const AddDeviceDialog: React.FC<AddDeviceDialogProps> = ({
-  open,
-  onOpenChange,
-  deviceName,
-  setDeviceName,
-  deviceBrand,
-  setDeviceBrand,
-  deviceModel,
-  setDeviceModel,
-  deviceModelNumber,
-  setDeviceModelNumber,
-  phoneModels,
-  selectedModelInfo,
-  onSubmit,
-}) => {
-  const [isSubmitting, setIsSubmitting] = useState(false);
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!deviceName.trim()) return;
-    
-    onSubmit(e);
-  };
-
-  return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent>
-        <DialogHeader>
-          <DialogTitle>新しいデバイスを追加</DialogTitle>
-          <DialogDescription>スマートフォンの情報を入力してください</DialogDescription>
-        </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <Label htmlFor="deviceName">デバイス名</Label>
-            <Input
-              id="deviceName"
-              value={deviceName}
-              onChange={(e) => setDeviceName(e.target.value)}
-              placeholder="例: メインのiPhone"
-              required
-            />
-          </div>
-          <div>
-            <Label htmlFor="deviceBrand">ブランド</Label>
-            <Select value={deviceBrand} onValueChange={setDeviceBrand} required>
-              <SelectTrigger>
-                <SelectValue placeholder="ブランドを選択" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.keys(phoneModels).map((brand) => (
-                  <SelectItem key={brand} value={brand}>
-                    {brand}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          {deviceBrand && (
-            <div>
-              <Label htmlFor="deviceModel">モデル</Label>
-              <Select value={deviceModel} onValueChange={setDeviceModel} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="モデルを選択" />
-                </SelectTrigger>
-                <SelectContent>
-                  {phoneModels[deviceBrand as keyof typeof phoneModels].map((modelInfo: any) => (
-                    <SelectItem key={modelInfo.model} value={modelInfo.model}>
-                      {modelInfo.model}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          {selectedModelInfo && (
-            <div>
-              <Label htmlFor="deviceModelNumber">型番</Label>
-              <Select value={deviceModelNumber} onValueChange={setDeviceModelNumber} required>
-                <SelectTrigger>
-                  <SelectValue placeholder="型番を選択" />
-                </SelectTrigger>
-                <SelectContent>
-                  {selectedModelInfo.modelNumbers.map((modelNumber: string) => (
-                    <SelectItem key={modelNumber} value={modelNumber}>
-                      {modelNumber}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-          <Button type="submit" className="w-full">
-            デバイスを追加
-          </Button>
-        </form>
-      </DialogContent>
-    </Dialog>
-  );
+export function AddDeviceDialog(props: AddDeviceDialogProps) {
+  const [submitting, setSubmitting] = useState(false);
+  async function submit(event: FormEvent) {
+    event.preventDefault();
+    if (submitting || !props.deviceName.trim()) return;
+    setSubmitting(true);
+    try { await props.onSubmit(event); }
+    finally { setSubmitting(false); }
+  }
+  return <Dialog open={props.open} onOpenChange={open => { if (!submitting) props.onOpenChange(open); }}>
+    <DialogContent>
+      <DialogHeader>
+        <DialogTitle>デバイスを追加</DialogTitle>
+        <DialogDescription>スマートフォン・タブレット・PCを登録できます。モデルは候補から選ぶか、自由に入力してください。</DialogDescription>
+      </DialogHeader>
+      <form onSubmit={submit} className="space-y-4">
+        <div className="space-y-2"><Label htmlFor="deviceName">デバイス名 *</Label>
+          <Input id="deviceName" value={props.deviceName} onChange={e => props.setDeviceName(e.target.value)} placeholder="例: 仕事用のノートPC" maxLength={256} required autoFocus /></div>
+        <div className="space-y-2"><Label htmlFor="deviceBrand">ブランド（任意）</Label>
+          <Input id="deviceBrand" list="brand-options" value={props.deviceBrand} onChange={e => props.setDeviceBrand(e.target.value)} maxLength={256} placeholder="選択または入力" />
+          <datalist id="brand-options">{Object.keys(props.phoneModels).map(brand => <option key={brand} value={brand} />)}</datalist></div>
+        <div className="space-y-2"><Label htmlFor="deviceModel">モデル（任意）</Label>
+          <Input id="deviceModel" list="model-options" value={props.deviceModel} onChange={e => props.setDeviceModel(e.target.value)} maxLength={256} placeholder="新しいモデルも入力できます" />
+          <datalist id="model-options">{(props.phoneModels[props.deviceBrand] || []).map(model => <option key={model.model} value={model.model} />)}</datalist></div>
+        <div className="space-y-2"><Label htmlFor="deviceModelNumber">型番（任意）</Label>
+          <Input id="deviceModelNumber" value={props.deviceModelNumber} onChange={e => props.setDeviceModelNumber(e.target.value)} maxLength={256} /></div>
+        <p className="rounded-lg bg-muted p-3 text-xs text-muted-foreground">登録後、APIキーとデバイスのUUIDを使って計測値を送信できます。最初の送信までは「未計測」と表示されます。</p>
+        <Button type="submit" className="w-full" disabled={submitting || !props.deviceName.trim()}>{submitting ? "登録中…" : "デバイスを追加"}</Button>
+      </form>
+    </DialogContent>
+  </Dialog>;
 }
