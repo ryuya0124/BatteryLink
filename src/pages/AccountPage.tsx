@@ -1,10 +1,9 @@
 import React, { useEffect, useState, useCallback, useRef } from "react";
 import { useAuth0 } from "@auth0/auth0-react";
 import { Button } from "@/components/ui/button";
-import { useNavigate, useLocation } from "react-router-dom";
+import { useLocation } from "react-router-dom";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { FaGoogle, FaFacebook, FaTwitter, FaGithub, FaApple, FaMicrosoft, FaAmazon, FaDiscord } from "react-icons/fa";
-import { Switch } from "@/components/ui/switch";
 import { useThemeMode } from "@/hooks/useThemeMode";
 import { Label } from "@/components/ui/label";
 import { Layout } from "@/components/Layout";
@@ -22,7 +21,6 @@ import { Input } from "@/components/ui/input";
 
 export const AccountPage: React.FC = () => {
   const { user, getAccessTokenSilently, isAuthenticated, isLoading, loginWithRedirect, logout } = useAuth0();
-  const navigate = useNavigate();
   const location = useLocation();
   const [linking, setLinking] = useState(false);
   const [linkError, setLinkError] = useState<string | null>(null);
@@ -247,16 +245,16 @@ export const AccountPage: React.FC = () => {
   return (
     <Layout>
       <SEO title="アカウント" noindex />
-      <div className="max-w-lg mx-auto bg-white dark:bg-card rounded shadow p-8 transition-colors">
-            <h2 className="text-3xl font-bold mb-6 text-foreground">アカウント情報</h2>
-            <div className="mb-6">
-              <div className="mb-2 text-muted-foreground"><b>メール:</b> {user?.email}</div>
-              <div className="mb-2 text-muted-foreground"><b>名前:</b> {user?.name}</div>
-              <div className="mb-4 text-muted-foreground"><b>連携済みアカウント:</b></div>
+      <header className="page-heading"><p className="page-kicker">PREFERENCES</p><h1 className="page-title">アカウント</h1><p className="page-description">プロフィール、ログイン方法、表示設定を管理します。</p></header>
+      <div className="account-settings grid items-start gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+            <section className="surface p-5 sm:p-7 lg:row-span-2">
+              <h2 className="mb-6 text-lg font-semibold">プロフィールとログイン</h2>
+              <dl className="mb-8 space-y-4 border-b pb-6 text-sm"><div><dt className="mb-1 text-xs text-muted-foreground">メールアドレス</dt><dd className="break-all">{user?.email || "未設定"}</dd></div><div><dt className="mb-1 text-xs text-muted-foreground">表示名</dt><dd className="break-all">{user?.name || "未設定"}</dd></div></dl>
+              <h3 className="mb-4 text-sm font-semibold">連携済みのログイン方法</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mb-4">
                 {normalizedIdentities.map((id: any, idx: number) => (
-                  <div key={`${id.provider}-${id.user_id || idx}`} className="flex items-center gap-3 p-3 border rounded shadow-sm bg-gray-50 dark:bg-muted">
-                    <div className="w-10 h-10 flex items-center justify-center rounded-full bg-blue-100 dark:bg-blue-900 text-2xl">
+                  <div key={`${id.provider}-${id.user_id || idx}`} className="flex items-center gap-3 rounded-xl border p-4">
+                    <div className="grid size-10 shrink-0 place-items-center rounded-xl bg-muted text-xl">
                       {id.providerKey === 'google-oauth2' && <FaGoogle className="text-[#4285F4] dark:text-[#8ab4f8]" />}
                       {id.providerKey === 'facebook' && <FaFacebook className="text-[#1877F3] dark:text-[#8ab4f8]" />}
                       {id.providerKey === 'twitter' && <FaTwitter className="text-[#1DA1F2] dark:text-[#8ab4f8]" />}
@@ -280,22 +278,20 @@ export const AccountPage: React.FC = () => {
                         {!['google-oauth2','facebook','twitter','github','apple','windowslive','amazon','discord'].includes(id.providerKey) && id.providerKey}
                       </div>
                       <div className="flex gap-2 flex-wrap mt-1">
-                        {idx === 0 && <span className="px-2 py-0.5 text-xs rounded bg-blue-600 text-white">メイン</span>}
-                        {id.isSocial && <span className="px-2 py-0.5 text-xs rounded bg-green-500 text-white">SNS</span>}
-                        {!id.isSocial && <span className="px-2 py-0.5 text-xs rounded bg-gray-400 dark:bg-gray-700 text-white">メール/パスワード</span>}
-                        <span className="px-2 py-0.5 text-xs rounded bg-emerald-500 text-white">連携済み</span>
+                        {idx === 0 && <span className="rounded bg-primary/10 px-2 py-0.5 text-xs text-primary">メイン</span>}
+                        <span className="text-xs text-muted-foreground">連携済み</span>
                       </div>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
-            <div className="flex flex-col gap-4">
+            <div className="mt-6 flex flex-col gap-4">
               {/** 未リンクのSNSのみ連携ボタン表示 */}
               {SOCIAL_PROVIDERS.filter(p => !normalizedIdentities.some((id: any) => id.providerKey === p.provider)).length > 0 && (
-                <div className="border rounded p-4 bg-blue-50 dark:bg-muted">
-                  <div className="mb-2 font-bold text-blue-700 dark:text-blue-300">未リンクのSNSアカウントと連携できます。</div>
-                  <div className="flex flex-wrap gap-2 mb-2">
+                <div className="border-t pt-6">
+                  <h3 className="mb-2 text-sm font-semibold">ログイン方法を追加</h3>
+                  <p className="mb-4 text-sm leading-relaxed text-muted-foreground">同じ確認済みメールアドレスのアカウントを連携できます。</p>
+                  <div className="account-providers grid grid-cols-1 sm:grid-cols-2 gap-2 mb-2">
                     {SOCIAL_PROVIDERS.filter(p => !normalizedIdentities.some((id: any) => id.providerKey === p.provider)).map(p => {
                       let Icon: any = null;
                       let btnClass = "";
@@ -321,41 +317,34 @@ export const AccountPage: React.FC = () => {
                       );
                     })}
                   </div>
-                  {linkError && <div className="text-red-500 mt-2">{linkError}</div>}
-                  {linkSuccess && <div className="text-green-600 mt-2">連携に成功しました！</div>}
+                  {linkError && <div role="alert" className="mt-3 text-sm text-destructive">{linkError}</div>}
+                  {linkSuccess && <div role="status" className="mt-3 text-sm text-primary">連携に成功しました。</div>}
                 </div>
               )}
-              <Button variant="outline" onClick={() => navigate("/dashboard")}>ダッシュボードに戻る</Button>
-              <Button variant="destructive" onClick={() => logout({ logoutParams: { returnTo: window.location.origin + "/" } })}>ログアウト</Button>
+              <Button variant="outline" className="mt-2 self-start" onClick={() => logout({ logoutParams: { returnTo: window.location.origin + "/" } })}>このアカウントからログアウト</Button>
             </div>
-            <div className="mt-8">
-              <h3 className="font-bold mb-2">テーマ設定</h3>
-              <div className="flex items-center gap-4 mb-2">
+            </section>
+            <section className="surface p-5 sm:p-7">
+              <h2 className="mb-2 text-lg font-semibold">表示設定</h2>
+              <p className="mb-6 text-sm leading-relaxed text-muted-foreground">お好みや利用環境に合わせて、画面の明るさを選べます。</p>
+              <div className="space-y-3">
                 <Label htmlFor="theme-mode">テーマ</Label>
                 <select
                   id="theme-mode"
                   value={theme}
                   onChange={e => setTheme(e.target.value as any)}
-                  className="border rounded px-2 py-1 bg-background text-foreground"
+                  className="h-11 w-full rounded-xl border bg-background px-3 text-sm text-foreground"
                 >
                   <option value="system">自動（OS設定に従う）</option>
                   <option value="light">ライト</option>
                   <option value="dark">ダーク</option>
                 </select>
               </div>
-              <div className="flex items-center gap-2">
-                <Switch
-                  checked={theme === "dark"}
-                  onCheckedChange={checked => setTheme(checked ? "dark" : "light")}
-                  id="theme-switch"
-                />
-                <Label htmlFor="theme-switch">ダークモード</Label>
-              </div>
-            </div>
+            </section>
             
             {/* 危険な操作セクション */}
-            <div className="mt-8 border-t pt-6">
-              <h3 className="font-bold mb-2 text-red-600 dark:text-red-400">危険な操作</h3>
+            <section className="rounded-2xl border border-destructive/30 p-5 sm:p-7">
+              <h2 className="mb-3 text-lg font-semibold">アカウントの削除</h2>
               <p className="text-sm text-muted-foreground mb-4">
                 アカウントを削除すると、すべてのデータ（デバイス、APIキー、設定など）が完全に削除されます。この操作は取り消せません。
               </p>
@@ -369,7 +358,7 @@ export const AccountPage: React.FC = () => {
               >
                 アカウントを削除
               </Button>
-            </div>
+            </section>
       </div>
       
       {/* アカウント削除確認ダイアログ */}

@@ -16,6 +16,7 @@ import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { useAuthLoading } from "@/hooks/AuthLoadingContext";
 import { useFilterSettings } from "@/hooks/useFilterSettings";
 import type { Device } from "../types";
+import { Plus, Search } from "lucide-react";
 
 export default function DashboardPage() {
   const { user, isAuthenticated, isLoading, getAccessTokenSilently } = useAuth0();
@@ -166,6 +167,7 @@ export default function DashboardPage() {
       await updateDevice(uuid, updates);
     } catch (err: any) {
       setError("デバイス編集に失敗しました: " + (err?.message || "不明なエラー"));
+      throw err;
     }
   };
 
@@ -234,20 +236,17 @@ export default function DashboardPage() {
       <SEO title="ダッシュボード" noindex />
       <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">BatteryLink / Overview</p>
-          <h1 className="mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">デバイスの状態</h1>
-          <p className="mt-1 text-sm text-muted-foreground">端末から届いた最新のバッテリー情報を確認できます。</p>
+          <p className="page-kicker">OVERVIEW</p>
+          <h1 className="page-title">ダッシュボード</h1>
+          <p className="page-description">デバイスの今を、まとめて確認。</p>
         </div>
-        <div className="w-full sm:max-w-xs">
-          <label htmlFor="device-search" className="mb-1 block text-sm font-medium">デバイスを検索</label>
-          <input id="device-search" type="search" value={search} onChange={event => setSearch(event.target.value)}
-            placeholder="名前・ブランド・モデル・UUID" className="w-full rounded-lg border bg-background px-3 py-2 text-sm focus-visible:outline-2 focus-visible:outline-ring" />
-        </div>
+        <Button onClick={() => setShowAddDevice(true)} className="gap-2"><Plus size={17} />デバイスを追加</Button>
       </div>
         {/* 左右分割 */}
-        <div className="flex flex-col lg:flex-row gap-6 lg:gap-10 min-h-0">
+        <div className="flex flex-col gap-6 min-h-0">
           {/* 左カラム: 固定 */}
-          <div className="w-full lg:w-1/4 flex-shrink-0 flex flex-col gap-4 px-0">
+          <div className="w-full flex flex-col gap-5">
+            <DeviceStats devices={devices} />
             <AutoUpdateControl
               autoUpdateEnabled={autoUpdateEnabled}
               setAutoUpdateEnabled={handleAutoUpdateChange}
@@ -255,19 +254,15 @@ export default function DashboardPage() {
               devicesCount={devices.length}
               manualRefresh={manualRefresh}
             />
-            <DeviceStats devices={devices} />
-            {/* デバイス追加ボタン */}
-            {devices.length > 0 && (
-              <div className="flex justify-center mt-8">
-                <Button variant="default" onClick={() => setShowAddDevice(true)}>
-                  デバイスを追加
-                </Button>
-              </div>
-            )}
           </div>
           {/* 右カラム: スクロール＋フィルタ上部 */}
-          <div className="w-full lg:w-3/4 flex flex-col flex-1 min-h-0">
-            <div className="flex-shrink-0">
+          <div className="w-full flex flex-col flex-1 min-h-0">
+            <div className="mb-5 flex flex-col gap-4 xl:flex-row xl:items-start xl:justify-between">
+              <div className="relative w-full xl:max-w-sm">
+                <label htmlFor="device-search" className="sr-only">名前・ブランド・モデル・UUIDでデバイスを検索</label>
+                <Search size={17} className="pointer-events-none absolute left-3.5 top-3 text-muted-foreground" />
+                <input id="device-search" type="search" value={search} onChange={event => setSearch(event.target.value)} placeholder="デバイスを検索…" className="h-11 w-full rounded-xl border bg-card pl-10 pr-3 text-sm" />
+              </div>
               <DeviceFilterSort
                 phoneModels={phoneModels}
               />
@@ -289,10 +284,11 @@ export default function DashboardPage() {
               onSubmit={handleAddDevice}
             />
             {/* デバイスカードセクション スクロール可能エリア */}
-            <div className="flex-1 overflow-y-auto min-h-0 px-0" style={{ scrollbarGutter: 'stable' }}>
+            <div className="flex-1 min-h-0">
+              <p className="mb-4 text-xs text-muted-foreground">{devices.length}台中 {filteredAndSortedDevices.length}台を表示</p>
               <div className="w-full px-0">
                 <div 
-                  className="grid gap-4 w-full grid-cols-[repeat(auto-fit,minmax(min(100%,16rem),1fr))]"
+                  className="grid gap-5 w-full grid-cols-1 md:grid-cols-2 xl:grid-cols-3"
                 >
                   {filteredAndSortedDevices.map((device) => (
                     <div key={device.uuid} className="w-full">

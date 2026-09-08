@@ -1,33 +1,16 @@
-import React from "react"
-import { Card, CardHeader, CardContent, CardTitle } from "@/components/ui/card"
-import { Smartphone, AlertTriangle } from "lucide-react"
-import type { Device } from "@/types"
+import { Smartphone, BatteryCharging, BatteryLow, Radio } from "lucide-react";
+import type { Device } from "@/types";
 
-interface DeviceStatsProps {
-  devices: Device[]
+export function DeviceStats({devices}: {devices: Device[]}) {
+  const metrics = [
+    {label: "登録デバイス", value: devices.length, icon: Smartphone, note: "すべてのデバイス"},
+    {label: "充電中", value: devices.filter(d => d.is_charging).length, icon: BatteryCharging, note: "最後に受信した状態"},
+    {label: "残量20%以下", value: devices.filter(d => d.battery_level !== null && d.battery_level <= 20).length, icon: BatteryLow, note: "充電のタイミングを確認"},
+    {label: "未計測", value: devices.filter(d => d.battery_level === null).length, icon: Radio, note: "デバイスからの送信待ち"},
+  ];
+  return <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-5">{metrics.map(({label, value, icon: Icon, note}) => <div key={label} className="surface p-4 sm:p-6">
+    <div className="mb-5 flex items-center justify-between gap-2 text-sm text-muted-foreground"><span>{label}</span><Icon size={18} aria-hidden /></div>
+    <div className="text-4xl font-medium tracking-tight tabular-nums">{value}<span className="ml-2 text-sm text-muted-foreground">台</span></div>
+    <p className="mt-3 text-xs leading-relaxed text-muted-foreground">{note}</p>
+  </div>)}</div>;
 }
-
-export const DeviceStats: React.FC<DeviceStatsProps> = ({ devices }) => (
-  <div className="grid grid-cols-2 gap-6 mb-8">
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">登録デバイス数</CardTitle>
-        <Smartphone className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold">{devices.length}</div>
-      </CardContent>
-    </Card>
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <CardTitle className="text-sm font-medium">低バッテリー警告</CardTitle>
-        <AlertTriangle className="h-4 w-4 text-muted-foreground" />
-      </CardHeader>
-      <CardContent>
-        <div className="text-2xl font-bold text-red-500">
-          {devices.filter((device) => device.battery_level !== null && device.battery_level <= 20).length}
-        </div>
-      </CardContent>
-    </Card>
-  </div>
-)

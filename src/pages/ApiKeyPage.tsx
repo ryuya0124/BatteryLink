@@ -5,6 +5,7 @@ import { ApiKeyManager } from "../components/ApiKeyManager";
 import FullScreenLoader from "@/components/ui/FullScreenLoader";
 import { useDelayedLoader } from "@/hooks/useDelayedLoader";
 import { Layout } from "@/components/Layout";
+import { SEO } from "@/components/SEO";
 
 export default function ApiKeyPage() {
   const { user, isAuthenticated, isLoading } = useAuth0();
@@ -22,7 +23,8 @@ export default function ApiKeyPage() {
 
   return (
     <Layout>
+      <SEO title="APIキー" noindex />
       <ApiKeyManager />
     </Layout>
   );
-} 
+}

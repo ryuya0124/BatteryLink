@@ -39,7 +39,7 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
   };
 
   return (
-    <div className="flex flex-wrap w-full gap-2 sm:gap-4 mb-6">
+    <div className="flex flex-wrap gap-2">
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
           <Button variant="outline" className="sm:w-auto min-w-0">
@@ -101,7 +101,7 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
             {settings.filterBattery === "all"
               ? "全て"
               : settings.filterBattery === "high"
-              ? "高 (50%以上)"
+              ? "高 (50%超)"
               : settings.filterBattery === "medium"
               ? "中 (21-50%)"
               : "低 (20%以下)"}
@@ -114,7 +114,7 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
             全て {settings.filterBattery === "all" && "✓"}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFilterBatteryChange("high")}>
-            高 (50%以上) {settings.filterBattery === "high" && "✓"}
+            高 (50%超) {settings.filterBattery === "high" && "✓"}
           </DropdownMenuItem>
           <DropdownMenuItem onClick={() => handleFilterBatteryChange("medium")}>
             中 (21-50%) {settings.filterBattery === "medium" && "✓"}
@@ -126,4 +126,4 @@ export const DeviceFilterSort: React.FC<DeviceFilterSortProps> = ({
       </DropdownMenu>
     </div>
   )
-} 
+}

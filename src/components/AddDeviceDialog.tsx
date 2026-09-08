@@ -30,10 +30,10 @@ export function AddDeviceDialog(props: AddDeviceDialogProps) {
     finally { setSubmitting(false); }
   }
   return <Dialog open={props.open} onOpenChange={open => { if (!submitting) props.onOpenChange(open); }}>
-    <DialogContent>
+    <DialogContent className="max-h-[90dvh] overflow-y-auto rounded-2xl">
       <DialogHeader>
         <DialogTitle>デバイスを追加</DialogTitle>
-        <DialogDescription>スマートフォン・タブレット・PCを登録できます。モデルは候補から選ぶか、自由に入力してください。</DialogDescription>
+        <DialogDescription>管理したい端末に名前を付けましょう。ブランドやモデルはあとから変更できます。</DialogDescription>
       </DialogHeader>
       <form onSubmit={submit} className="space-y-4">
         <div className="space-y-2"><Label htmlFor="deviceName">デバイス名 *</Label>

@@ -23,7 +23,7 @@ export default function PrivacyPolicyPage() {
 
         <h1 className="text-3xl sm:text-4xl font-bold mb-8">プライバシーポリシー</h1>
         
-        <div className="prose prose-neutral dark:prose-invert max-w-none space-y-6">
+        <div className="legal-document prose prose-neutral dark:prose-invert max-w-none space-y-6">
           <p className="text-muted-foreground">最終更新日: 2025年12月17日</p>
 
           <section className="space-y-4">
@@ -115,7 +115,7 @@ export default function PrivacyPolicyPage() {
         </div>
 
         <footer className="mt-12 pt-8 border-t text-center text-muted-foreground text-xs sm:text-sm">
-          <p>© 2025 BatterySync</p>
+          <p>© {new Date().getFullYear()} BatterySync</p>
         </footer>
       </div>
     </div>

@@ -1,12 +1,15 @@
 import React from "react";
 import { Button } from "../components/ui/button";
+import { Link } from "react-router-dom";
+import { ArrowLeft, Compass } from "lucide-react";
 
 export default function NotFoundPage() {
   return (
-    <div className="min-h-screen flex flex-col items-center justify-center bg-background text-foreground transition-colors">
-      <h1 className="text-4xl font-bold mb-4">404 Not Found</h1>
-      <p className="mb-8">お探しのページは見つかりませんでした。</p>
-      <Button onClick={() => window.location.href = "/"}>トップへ戻る</Button>
-    </div>
+    <main className="state-page"><div className="state-panel">
+      <Compass className="text-primary" size={32} /><h1>ページが見つかりません</h1>
+      <p>URLが変更されたか、ページが削除された可能性があります。トップページからお探しください。</p>
+      <Button asChild><Link to="/"><ArrowLeft size={16} />トップへ戻る</Link></Button>
+      <div className="mt-8 text-xs text-muted-foreground">404 / BatterySync</div>
+    </div></main>
   );
-} 
+}

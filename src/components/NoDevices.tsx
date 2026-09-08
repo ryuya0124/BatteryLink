@@ -8,17 +8,17 @@ interface NoDevicesProps {
 }
 
 export const NoDevices: React.FC<NoDevicesProps> = ({ type, onAddDevice }) => (
-  <div className="text-center py-12">
-    <Smartphone className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+  <div className="surface px-5 py-16 text-center">
+    <div className="mx-auto mb-5 grid size-16 place-items-center rounded-2xl bg-muted"><Smartphone className="size-7 text-primary" /></div>
     {type === "filtered" ? (
       <>
-        <h3 className="text-xl font-medium text-gray-900 mb-2">条件に一致するデバイスがありません</h3>
-        <p className="text-gray-500">フィルター条件を変更してください</p>
+        <h3 className="text-lg font-medium text-foreground mb-2">条件に一致するデバイスがありません</h3>
+        <p className="text-sm text-muted-foreground">検索キーワードやフィルター条件を変更してみてください。</p>
       </>
     ) : (
       <>
-        <h3 className="text-xl font-medium text-gray-900 mb-2">デバイスが登録されていません</h3>
-        <p className="text-gray-500 mb-4">最初のスマートフォンを追加してバッテリー管理を始めましょう</p>
+        <h3 className="text-lg font-medium text-foreground mb-2">最初のデバイスをつなぎましょう</h3>
+        <p className="mx-auto max-w-md text-sm leading-7 text-muted-foreground mb-6">デバイスを登録し、APIでデータを送信すると、ここにバッテリーの状態が表示されます。</p>
         {onAddDevice && (
           <Button variant="default" onClick={onAddDevice}>
             <Plus className="h-4 w-4 mr-2" />
@@ -28,4 +28,4 @@ export const NoDevices: React.FC<NoDevicesProps> = ({ type, onAddDevice }) => (
       </>
     )}
   </div>
-) 
+)

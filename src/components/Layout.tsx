@@ -15,17 +15,17 @@ export const Layout: React.FC<LayoutProps> = ({ children, error, lockScroll = fa
 
   return (
     <div className={rootClass}>
-      <div className="container w-full max-w-full mx-auto px-4 sm:px-8 lg:px-16 py-6 sm:py-10 h-full flex flex-col">
+      <div className="app-container">
         <Header error={error} />
-        <div className={lockScroll ? "flex-1 lg:overflow-hidden min-h-0" : "flex-1 min-h-0"} style={{ scrollbarGutter: 'stable' }}>
+        <main id="main-content" className={`app-main ${lockScroll ? "lg:overflow-auto" : ""}`}>
           {children}
-        </div>
-        <footer className="mt-8 sm:mt-16 text-center text-muted-foreground text-xs sm:text-sm w-full flex-shrink-0">
-          <p>© {new Date().getFullYear()} BatteryLink</p>
-          <div className="mt-2 flex justify-center gap-4">
+        </main>
+        <footer className="app-footer">
+          <p>© {new Date().getFullYear()} BatterySync</p>
+          <nav aria-label="フッターナビゲーション">
             <Link to="/privacy" className="hover:text-foreground transition-colors">プライバシーポリシー</Link>
             <Link to="/terms" className="hover:text-foreground transition-colors">利用規約</Link>
-          </div>
+          </nav>
         </footer>
       </div>
     </div>
